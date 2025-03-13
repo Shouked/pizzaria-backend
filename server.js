@@ -1,34 +1,38 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+const router = express.Router();
+const Product = require('../models/Product');
 
-const app = express();
+// Obter todos os produtos
+router.get('/', async (req, res) => {
+  try {
+    console.log('Buscando produtos...');
+    const products = await Product.find().lean();
+    console.log('Produtos encontrados:', products);
+    console.log('Número de produtos:', products.length);
+    res.json(products);
+  } catch (err) {
+    console.error('Erro ao buscar produtos:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
 
-// Configurar o middleware cors
-app.use(cors({
-  origin: 'https://pizzadabia.netlify.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+// Adicionar um novo produto (para testes)
+router.post('/', async (req, res) => {
+  try {
+    const product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      image: req.body.image,
+    });
+    const newProduct = await product.save();
+    console.log('Produto adicionado:', newProduct);
+    res.status(201).json(newProduct);
+  } catch (err) {
+    console.error('Erro ao adicionar produto:', err.message);
+    res.status(400).json({ message: err.message });
+  }
+});
 
-// Middlewares
-app.use(express.json());
-
-// Rotas
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/orders'));
-
-// Conexão com o MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('Conectado ao MongoDB'))
-  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
-
-// Iniciar o servidor
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+module.exports = router;
