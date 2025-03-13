@@ -1,21 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const Order = require('../models/Order');
-const auth = require('../middleware/auth');
+const mongoose = require('mongoose');
 
-router.post('/', auth, async (req, res) => {
-  try {
-    const { items, total } = req.body;
-    const order = new Order({
-      user: req.user.id, // O ID do usuário autenticado
-      items,
-      total,
-    });
-    await order.save();
-    res.status(201).json(order);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+const itemSchema = new mongoose.Schema({
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  quantity: { type: Number, required: true },
 });
 
-module.exports = router;
+const orderSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  items: [itemSchema],
+  total: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model('Order', orderSchema);
