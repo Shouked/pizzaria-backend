@@ -1,15 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors'); // Importar o cors
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-// Configurar o middleware cors para permitir requisições do frontend
+// Configurar o middleware cors
 app.use(cors({
-  origin: 'https://pizzadabia.netlify.app', // Permitir apenas o domínio do frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+  origin: 'https://pizzadabia.netlify.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Middlewares
