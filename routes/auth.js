@@ -4,6 +4,20 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Middleware para verificar o token
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ message: 'Acesso negado' });
+
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(400).json({ message: 'Token inválido' });
+  }
+};
+
 // Registrar um novo usuário
 router.post('/register', async (req, res) => {
   try {
@@ -11,8 +25,14 @@ router.post('/register', async (req, res) => {
     const user = new User({
       name: req.body.name,
       phone: req.body.phone,
-      address: req.body.address,
-      complement: req.body.complement,
+      address: {
+        cep: req.body.address.cep,
+        street: req.body.address.street,
+        number: req.body.address.number,
+        neighborhood: req.body.address.neighborhood,
+        city: req.body.address.city,
+        complement: req.body.address.complement,
+      },
       email: req.body.email,
       password: hashedPassword,
     });
@@ -40,6 +60,16 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Obter dados do usuário logado
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
