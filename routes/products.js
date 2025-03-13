@@ -12,17 +12,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Criar um novo produto
+// Adicionar um novo produto (para testes)
 router.post('/', async (req, res) => {
-  const product = new Product({
-    name: req.body.name,
-    category: req.body.category,
-    price: req.body.price,
-    description: req.body.description,
-    image: req.body.image,
-  });
-
   try {
+    const product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      image: req.body.image,
+    });
     const newProduct = await product.save();
     res.status(201).json(newProduct);
   } catch (err) {
