@@ -28,8 +28,7 @@ mongoose
   })
   .then(async () => {
     console.log('Conectado ao MongoDB');
-    console.log('Database Name:', mongoose.connection.db.databaseName);
-    console.log('MONGO_URI Configurado:', process.env.MONGO_URI);
+    console.log('Database Name:', mongoose.connection.db.databaseName); // Deve mostrar "pizzaria"
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Coleções no banco:', collections.map(col => col.name));
   })
