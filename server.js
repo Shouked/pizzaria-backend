@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
-// Configurar o middleware cors
+// Configurar o middleware CORS
 app.use(cors({
   origin: 'https://pizzadabia.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -28,7 +28,7 @@ mongoose
   })
   .then(async () => {
     console.log('Conectado ao MongoDB');
-    console.log('Database Name:', mongoose.connection.db.databaseName); // Deve mostrar "pizzaria"
+    console.log('Database Name:', mongoose.connection.db.databaseName);
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Coleções no banco:', collections.map(col => col.name));
   })
