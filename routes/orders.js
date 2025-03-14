@@ -34,4 +34,17 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Listar pedidos do usuário autenticado
+router.get('/user', auth, async (req, res) => {
+  try {
+    console.log('Buscando pedidos do usuário:', req.user.id); // Log para depuração
+    const orders = await Order.find({ user: req.user.id });
+    console.log('Pedidos encontrados:', orders); // Log para depuração
+    res.json(orders);
+  } catch (err) {
+    console.error('Erro ao listar pedidos:', err.message); // Log detalhado do erro
+    res.status(500).json({ message: 'Erro ao listar pedidos: ' + err.message });
+  }
+});
+
 module.exports = router;
