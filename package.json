@@ -5,8 +5,7 @@
   "description": "Backend para Pizzaria da Bia",
   "main": "server.js",
   "scripts": {
-  "start": "node index.js"
-
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
