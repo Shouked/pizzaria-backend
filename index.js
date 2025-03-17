@@ -1,30 +1,30 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
-const orderRoutes = require('./routes/orders');
-const productRoutes = require('./routes/products');
-const User = require('./models/User'); // Importar aqui para garantir consistência
 require('dotenv').config();
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Conectar ao MongoDB
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('Conectado ao MongoDB com sucesso'))
-  .catch((err) => {
-    console.error('Erro ao conectar ao MongoDB:', err.message, err.stack);
-    process.exit(1);
-  });
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => console.log('MongoDB conectado'))
+  .catch(err => console.log(err));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/products', productRoutes);
+// Rotas
+const productRoutes = require('./routes/products');
+app.use('/api', productRoutes);
 
-const PORT = process.env.PORT || 5000;
+// Rota de teste
+app.get('/', (req, res) => {
+    res.send('API da Pizzaria funcionando!');
+});
+
+// Iniciar o servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
