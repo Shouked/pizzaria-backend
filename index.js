@@ -4,6 +4,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/products');
+const User = require('./models/User'); // Importar aqui para garantir consistência
 require('dotenv').config();
 
 const app = express();
@@ -18,7 +19,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log('Conectado ao MongoDB com sucesso'))
   .catch((err) => {
     console.error('Erro ao conectar ao MongoDB:', err.message, err.stack);
-    process.exit(1); // Encerra o processo se o MongoDB falhar
+    process.exit(1);
   });
 
 app.use('/api/auth', authRoutes);
