@@ -1,65 +1,90 @@
-
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const auth = require('../middleware/auth'); // Importa o middleware
+const bcrypt = require('bcrypt');
+const authMiddleware = require('../middleware/auth');
 
-// Registrar um novo usuário
 router.post('/register', async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const user = new User({
-      name: req.body.name,
-      phone: req.body.phone,
-      address: {
-        cep: req.body.address.cep,
-        street: req.body.address.street,
-        number: req.body.address.number,
-        neighborhood: req.body.address.neighborhood,
-        city: req.body.address.city,
-        complement: req.body.address.complement,
-      },
-      email: req.body.email,
-      password: hashedPassword,
-    });
+  const { name, email, password, phone } = req.body;
 
-    const newUser = await user.save();
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(201).json({ token, user: { id: newUser._id, name: newUser.name, email: newUser.email } });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+  try {
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'Usuário já existe.' });
+    }
+
+    user = new User({ name, email, password, phone });
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.status(201).json({ token });
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error.message);
+    res.status(500).json({ message: 'Erro ao registrar usuário.', error: error.message });
   }
 });
 
-// Login
 router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Email ou senha incorretos' });
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ message: 'Email ou senha incorretos' });
+    const isMatch = await bcrypt.compare(password, user.password); // Usando bcrypt diretamente
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ token });
+  } catch (error) {
+    console.error('Erro ao fazer login:', error.message);
+    res.status(500).json({ message: 'Erro ao fazer login.', error: error.message });
   }
 });
 
-// Obter dados do usuário logado
-router.get('/me', auth, async (req, res) => {
+router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
     res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error.message);
+    res.status(500).json({ message: 'Erro ao buscar usuário.', error: error.message });
+  }
+});
+
+router.put('/me', authMiddleware, async (req, res) => {
+  const { name, email, phone } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, email, phone },
+      { new: true, runValidators: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    res.json(user);
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error.message);
+    res.status(400).json({ message: 'Erro ao atualizar perfil.', error: error.message });
+  }
+});
+
+router.put('/password', authMiddleware, async (req, res) => {
+  const { password } = req.body;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    user.password = password; // Será hasheado pelo middleware pre-save
+    await user.save();
+    res.status(200).json({ message: 'Senha atualizada com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao atualizar senha:', error.message);
+    res.status(400).json({ message: 'Erro ao atualizar senha.', error: error.message });
   }
 });
 
