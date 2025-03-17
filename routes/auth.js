@@ -27,7 +27,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  console.log('Tentativa de login com:', { email }); // Log inicial
+  console.log('Tentativa de login com:', { email });
 
   try {
     const user = await User.findOne({ email });
@@ -35,6 +35,12 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    // Verificar se user tem o método comparePassword
+    if (typeof user.comparePassword !== 'function') {
+      console.error('comparePassword não é uma função no objeto user:', user);
+      throw new Error('Modelo User não carregado corretamente.');
     }
 
     const isMatch = await user.comparePassword(password);
