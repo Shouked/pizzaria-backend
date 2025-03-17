@@ -19,23 +19,37 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao registrar usuário.', error });
+    console.error('Erro ao registrar usuário:', error.message, error.stack);
+    res.status(500).json({ message: 'Erro ao registrar usuário.', error: error.message });
   }
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
+  console.log('Tentativa de login com:', { email }); // Log inicial
+
   try {
     const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    console.log('Usuário encontrado:', user ? user._id : 'Nenhum usuário encontrado');
+
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    console.log('Senha válida:', isMatch);
+
+    if (!isMatch) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log('Token gerado para usuário:', user._id);
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao fazer login.', error });
+    console.error('Erro ao fazer login:', error.message, error.stack);
+    res.status(500).json({ message: 'Erro ao fazer login.', error: error.message });
   }
 });
 
@@ -45,7 +59,8 @@ router.get('/me', authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar usuário.', error });
+    console.error('Erro ao buscar usuário:', error.message, error.stack);
+    res.status(500).json({ message: 'Erro ao buscar usuário.', error: error.message });
   }
 });
 
@@ -60,7 +75,8 @@ router.put('/me', authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
     res.json(user);
   } catch (error) {
-    res.status(400).json({ message: 'Erro ao atualizar perfil.', error });
+    console.error('Erro ao atualizar perfil:', error.message, error.stack);
+    res.status(400).json({ message: 'Erro ao atualizar perfil.', error: error.message });
   }
 });
 
@@ -73,7 +89,8 @@ router.put('/password', authMiddleware, async (req, res) => {
     await user.save();
     res.status(200).json({ message: 'Senha atualizada com sucesso.' });
   } catch (error) {
-    res.status(400).json({ message: 'Erro ao atualizar senha.', error });
+    console.error('Erro ao atualizar senha:', error.message, error.stack);
+    res.status(400).json({ message: 'Erro ao atualizar senha.', error: error.message });
   }
 });
 
