@@ -14,13 +14,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Usuário já existe.' });
     }
 
-    user = new User({
-      name,
-      email,
-      password, // Será hasheado pelo middleware
-      phone,
-      address, // Passando o objeto address completo
-    });
+    user = new User({ name, email, password, phone, address });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -41,7 +35,7 @@ router.post('/login', async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!user || !isMatch) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
@@ -65,11 +59,11 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 router.put('/me', authMiddleware, async (req, res) => {
-  const { name, email, phone } = req.body;
+  const { name, email, phone, address } = req.body;
   try {
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, email, phone },
+      { name, email, phone, address },
       { new: true, runValidators: true }
     ).select('-password');
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
@@ -85,7 +79,7 @@ router.put('/password', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-    user.password = password; // Será hasheado pelo middleware pre-save
+    user.password = password;
     await user.save();
     res.status(200).json({ message: 'Senha atualizada com sucesso.' });
   } catch (error) {
