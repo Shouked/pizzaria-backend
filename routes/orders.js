@@ -6,10 +6,9 @@ const auth = require('../middleware/auth');
 // Criar um novo pedido
 router.post('/', auth, async (req, res) => {
   try {
-    console.log('Requisição recebida para criar pedido:', req.body); // Log para depuração
+    console.log('Requisição recebida para criar pedido:', req.body);
     const { items, total, deliveryOption, address } = req.body;
     
-    // Validar dados
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Itens do pedido são obrigatórios.' });
     }
@@ -21,20 +20,20 @@ router.post('/', auth, async (req, res) => {
     }
 
     const order = new Order({
-      user: req.user.id, // ID do usuário autenticado pelo middleware auth
+      user: req.user.id,
       items,
       total,
       deliveryOption,
-      address: deliveryOption === 'delivery' ? address : null, // Endereço só se for entrega
+      address: deliveryOption === 'delivery' ? address : null,
       createdAt: new Date(),
     });
 
-    console.log('Pedido a ser salvo:', order); // Log para depuração
+    console.log('Pedido a ser salvo:', order);
     const savedOrder = await order.save();
-    console.log('Pedido salvo com sucesso:', savedOrder); // Log para depuração
+    console.log('Pedido salvo com sucesso:', savedOrder);
     res.status(201).json(savedOrder);
   } catch (err) {
-    console.error('Erro ao criar pedido:', err.message); // Log detalhado do erro
+    console.error('Erro ao criar pedido:', err.message);
     res.status(500).json({ message: 'Erro ao criar pedido: ' + err.message });
   }
 });
@@ -42,12 +41,12 @@ router.post('/', auth, async (req, res) => {
 // Listar pedidos do usuário autenticado
 router.get('/user', auth, async (req, res) => {
   try {
-    console.log('Buscando pedidos do usuário:', req.user.id); // Log para depuração
-    const orders = await Order.find({ user: req.user.id });
-    console.log('Pedidos encontrados:', orders); // Log para depuração
+    console.log('Buscando pedidos do usuário:', req.user.id);
+    const orders = await Order.find({ user: req.user.id }).populate('items.product', 'name price');
+    console.log('Pedidos encontrados:', orders);
     res.json(orders);
   } catch (err) {
-    console.error('Erro ao listar pedidos:', err.message); // Log detalhado do erro
+    console.error('Erro ao listar pedidos:', err.message);
     res.status(500).json({ message: 'Erro ao listar pedidos: ' + err.message });
   }
 });
