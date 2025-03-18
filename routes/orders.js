@@ -7,7 +7,7 @@ const auth = require('../middleware/auth');
 router.post('/', auth, async (req, res) => {
   try {
     console.log('Requisição recebida para criar pedido:', req.body); // Log para depuração
-    const { items, total } = req.body;
+    const { items, total, deliveryOption, address } = req.body;
     
     // Validar dados
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -16,11 +16,16 @@ router.post('/', auth, async (req, res) => {
     if (!total || isNaN(total)) {
       return res.status(400).json({ message: 'Total do pedido é inválido.' });
     }
+    if (!deliveryOption || !['delivery', 'pickup'].includes(deliveryOption)) {
+      return res.status(400).json({ message: 'Opção de entrega inválida.' });
+    }
 
     const order = new Order({
       user: req.user.id, // ID do usuário autenticado pelo middleware auth
       items,
       total,
+      deliveryOption,
+      address: deliveryOption === 'delivery' ? address : null, // Endereço só se for entrega
       createdAt: new Date(),
     });
 
