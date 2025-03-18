@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const authMiddleware = require('../middleware/auth');
 
 router.post('/register', async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  const { name, email, password, phone, address } = req.body;
 
   try {
     let user = await User.findOne({ email });
@@ -14,7 +14,13 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Usuário já existe.' });
     }
 
-    user = new User({ name, email, password, phone });
+    user = new User({
+      name,
+      email,
+      password, // Será hasheado pelo middleware
+      phone,
+      address, // Passando o objeto address completo
+    });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -34,7 +40,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password); // Usando bcrypt diretamente
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Credenciais inválidas.' });
     }
