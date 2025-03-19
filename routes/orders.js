@@ -51,4 +51,26 @@ router.get('/user', auth, async (req, res) => {
   }
 });
 
+// Cancelar um pedido
+router.put('/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ msg: 'Pedido não encontrado' });
+    }
+    if (order.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'Não autorizado' });
+    }
+    if (order.status !== 'Pendente') {
+      return res.status(400).json({ msg: 'Apenas pedidos pendentes podem ser cancelados' });
+    }
+    order.status = 'Cancelado';
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
+  }
+});
+
 module.exports = router;
