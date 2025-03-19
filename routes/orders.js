@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
-const auth = require('../middleware/auth'); // Import correto
+const auth = require('../middleware/auth');
 
 // Criar um novo pedido
 router.post('/', auth, async (req, res) => {
@@ -25,7 +25,7 @@ router.post('/', auth, async (req, res) => {
       total,
       deliveryOption,
       address: deliveryOption === 'delivery' ? address : null,
-      status: 'Pendente', // Adicionado explicitamente como padrão
+      status: 'Pendente',
       createdAt: new Date(),
     });
 
@@ -53,24 +53,32 @@ router.get('/user', auth, async (req, res) => {
 });
 
 // Cancelar um pedido
-router.put('/:id/cancel', auth, async (req, res) => { // Corrigido para 'auth'
+router.put('/:id/cancel', auth, async (req, res) => {
   try {
+    console.log('Tentando cancelar pedido com ID:', req.params.id);
     const order = await Order.findById(req.params.id);
     if (!order) {
+      console.log('Pedido não encontrado para ID:', req.params.id);
       return res.status(404).json({ msg: 'Pedido não encontrado' });
     }
+    console.log('Pedido encontrado:', order);
+
     if (order.user.toString() !== req.user.id) {
+      console.log('Usuário não autorizado. User do pedido:', order.user, 'User da requisição:', req.user.id);
       return res.status(401).json({ msg: 'Não autorizado' });
     }
     if (order.status !== 'Pendente') {
+      console.log('Status do pedido não permite cancelamento:', order.status);
       return res.status(400).json({ msg: 'Apenas pedidos pendentes podem ser cancelados' });
     }
+
     order.status = 'Cancelado';
-    await order.save();
-    res.json(order);
+    const updatedOrder = await order.save();
+    console.log('Pedido cancelado com sucesso:', updatedOrder);
+    res.json(updatedOrder);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Erro no servidor');
+    console.error('Erro ao cancelar pedido:', err.stack); // Log completo do erro
+    res.status(500).json({ message: 'Erro ao cancelar pedido: ' + err.message });
   }
 });
 
