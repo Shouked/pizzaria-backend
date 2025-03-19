@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
-const auth = require('../middleware/auth');
+const auth = require('../middleware/auth'); // Import correto
 
 // Criar um novo pedido
 router.post('/', auth, async (req, res) => {
@@ -25,6 +25,7 @@ router.post('/', auth, async (req, res) => {
       total,
       deliveryOption,
       address: deliveryOption === 'delivery' ? address : null,
+      status: 'Pendente', // Adicionado explicitamente como padrão
       createdAt: new Date(),
     });
 
@@ -52,7 +53,7 @@ router.get('/user', auth, async (req, res) => {
 });
 
 // Cancelar um pedido
-router.put('/:id/cancel', authMiddleware, async (req, res) => {
+router.put('/:id/cancel', auth, async (req, res) => { // Corrigido para 'auth'
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
