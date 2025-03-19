@@ -18,6 +18,7 @@ const orderSchema = new mongoose.Schema({
     city: { type: String },
     complement: { type: String },
   },
+  status: { type: String, default: 'Pendente', enum: ['Pendente', 'Em Preparação', 'Enviado', 'Entregue', 'Retirado'] },
   createdAt: { type: Date, default: Date.now },
 });
 
