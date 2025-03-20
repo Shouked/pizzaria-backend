@@ -15,7 +15,11 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
+// Configuração do Mongoose para evitar aviso de strictQuery
+mongoose.set('strictQuery', false);
+
 // Conexão com MongoDB
+console.log('Tentando conectar ao MongoDB com URI:', process.env.MONGODB_URI ? 'Definida' : 'Undefined');
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
