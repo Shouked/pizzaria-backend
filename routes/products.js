@@ -2,53 +2,36 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 
-// Listar produtos do tenant atual
+// Obter todos os produtos
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find({ tenantId: req.tenantId });
+    console.log('Iniciando busca de produtos...');
+    const products = await Product.find().lean();
+    console.log('Produtos encontrados:', products);
+    console.log('Número de produtos:', products.length);
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: 'Erro ao listar produtos', error: err.message });
+    console.error('Erro ao buscar produtos:', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
-// Criar um novo produto para o tenant atual
+// Adicionar um novo produto (para testes)
 router.post('/', async (req, res) => {
   try {
     const product = new Product({
-      ...req.body,
-      tenantId: req.tenantId, // Adiciona o tenantId automaticamente
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      image: req.body.image,
     });
-    await product.save();
-    res.status(201).json(product);
+    const newProduct = await product.save();
+    console.log('Produto adicionado:', newProduct);
+    res.status(201).json(newProduct);
   } catch (err) {
-    res.status(400).json({ message: 'Erro ao criar produto', error: err.message });
-  }
-});
-
-// Atualizar um produto
-router.put('/:id', async (req, res) => {
-  try {
-    const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenantId },
-      req.body,
-      { new: true }
-    );
-    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
-    res.json(product);
-  } catch (err) {
-    res.status(400).json({ message: 'Erro ao atualizar produto', error: err.message });
-  }
-});
-
-// Deletar um produto
-router.delete('/:id', async (req, res) => {
-  try {
-    const product = await Product.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
-    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
-    res.json({ message: 'Produto deletado' });
-  } catch (err) {
-    res.status(500).json({ message: 'Erro ao deletar produto', error: err.message });
+    console.error('Erro ao adicionar produto:', err.message);
+    res.status(400).json({ message: err.message });
   }
 });
 
