@@ -1,14 +1,28 @@
 const mongoose = require('mongoose');
 
+const itemSchema = new mongoose.Schema({
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  quantity: { type: Number, required: true },
+});
+
 const orderSchema = new mongoose.Schema({
-  tenantId: { type: String, required: true }, // Identificador da pizzaria (ex.: "pizzaria-a")
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  items: [{
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    quantity: { type: Number, required: true },
-  }],
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  items: [itemSchema],
   total: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'preparing', 'delivered'], default: 'pending' },
+  deliveryOption: { type: String, required: true, enum: ['delivery', 'pickup'] },
+  address: {
+    cep: { type: String },
+    street: { type: String },
+    number: { type: String },
+    neighborhood: { type: String },
+    city: { type: String },
+    complement: { type: String },
+  },
+  status: { 
+    type: String, 
+    default: 'Pendente', 
+    enum: ['Pendente', 'Em Preparação', 'Enviado', 'Entregue', 'Retirado', 'Cancelado'] // Adicionado 'Cancelado'
+  },
   createdAt: { type: Date, default: Date.now },
 });
 
