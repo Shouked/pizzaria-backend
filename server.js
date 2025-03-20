@@ -18,14 +18,20 @@ app.use(express.json());
 // Configuração do Mongoose para evitar aviso de strictQuery
 mongoose.set('strictQuery', false);
 
-// Conexão com MongoDB
-console.log('Tentando conectar ao MongoDB com URI:', process.env.MONGODB_URI ?);
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('Conectado ao MongoDB'))
-  .catch((err) => console.error('Erro ao conectar ao MongoDB:', err));
+
+// Conexão com o MongoDB
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(async () => {
+    console.log('Conectado ao MongoDB');
+    console.log('Database Name:', mongoose.connection.db.databaseName);
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Coleções no banco:', collections.map(col => col.name));
+  })
+  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
