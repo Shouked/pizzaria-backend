@@ -19,7 +19,7 @@ app.use(express.json());
 mongoose.set('strictQuery', false);
 
 // Conexão com MongoDB
-console.log('Tentando conectar ao MongoDB com URI:', process.env.MONGODB_URI ? 'Definida' : 'Undefined');
+console.log('Tentando conectar ao MongoDB com URI:', process.env.MONGODB_URI ?);
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
