@@ -1,90 +1,105 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const authMiddleware = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
-router.post('/register', async (req, res) => {
-  const { name, email, password, phone, address } = req.body;
-
-  try {
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'Usuário já existe.' });
-    }
-
-    user = new User({ name, email, password, phone, address });
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(201).json({ token });
-  } catch (error) {
-    console.error('Erro ao registrar usuário:', error.message);
-    res.status(500).json({ message: 'Erro ao registrar usuário.', error: error.message });
-  }
-});
-
+// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Credenciais inválidas.' });
-    }
+    if (!user) return res.status(400).json({ message: 'Credenciais inválidas' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!user || !isMatch) {
-      return res.status(401).json({ message: 'Credenciais inválidas.' });
-    }
+    if (!isMatch) return res.status(400).json({ message: 'Credenciais inválidas' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (error) {
-    console.error('Erro ao fazer login:', error.message);
-    res.status(500).json({ message: 'Erro ao fazer login.', error: error.message });
+    const payload = { user: { id: user.id } };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user: user.toJSON() });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
-router.get('/me', authMiddleware, async (req, res) => {
+// Registro (já existe, mas ajustado para tenantId)
+router.post('/register', async (req, res) => {
+  const { name, phone, address, email, password, tenantId } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ message: 'Usuário já existe' });
+
+    user = new User({
+      name,
+      phone,
+      address,
+      email,
+      password,
+      tenantId, // Adicionado
+    });
+
+    await user.save();
+
+    const payload = { user: { id: user.id } };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user: user.toJSON() });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
+  }
+});
+
+// Pegar usuário autenticado
+router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
     res.json(user);
-  } catch (error) {
-    console.error('Erro ao buscar usuário:', error.message);
-    res.status(500).json({ message: 'Erro ao buscar usuário.', error: error.message });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
-router.put('/me', authMiddleware, async (req, res) => {
-  const { name, email, phone, address } = req.body;
+// Atualizar perfil
+router.put('/me', auth, async (req, res) => {
+  const { name, email, phone, address, tenantId } = req.body;
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, email, phone, address },
-      { new: true, runValidators: true }
-    ).select('-password');
-    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+    user.address = address || user.address;
+    user.tenantId = tenantId || user.tenantId; // Adicionado
+
+    await user.save();
     res.json(user);
-  } catch (error) {
-    console.error('Erro ao atualizar perfil:', error.message);
-    res.status(400).json({ message: 'Erro ao atualizar perfil.', error: error.message });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
-router.put('/password', authMiddleware, async (req, res) => {
+// Alterar senha
+router.put('/password', auth, async (req, res) => {
   const { password } = req.body;
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+
     user.password = password;
     await user.save();
-    res.status(200).json({ message: 'Senha atualizada com sucesso.' });
-  } catch (error) {
-    console.error('Erro ao atualizar senha:', error.message);
-    res.status(400).json({ message: 'Erro ao atualizar senha.', error: error.message });
+    res.json({ message: 'Senha alterada com sucesso' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
