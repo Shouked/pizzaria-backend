@@ -7,8 +7,8 @@ const auth = require('../middleware/auth');
 router.post('/', auth, async (req, res) => {
   try {
     console.log('Requisição recebida para criar pedido:', req.body);
-    const { items, total, deliveryOption, address } = req.body;
-    
+    const { items, total, deliveryOption, address, tenantId } = req.body;
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Itens do pedido são obrigatórios.' });
     }
@@ -17,6 +17,9 @@ router.post('/', auth, async (req, res) => {
     }
     if (!deliveryOption || !['delivery', 'pickup'].includes(deliveryOption)) {
       return res.status(400).json({ message: 'Opção de entrega inválida.' });
+    }
+    if (!tenantId) {
+      return res.status(400).json({ message: 'tenantId é obrigatório.' });
     }
 
     const order = new Order({
@@ -27,6 +30,7 @@ router.post('/', auth, async (req, res) => {
       address: deliveryOption === 'delivery' ? address : null,
       status: 'Pendente',
       createdAt: new Date(),
+      tenantId, // Adiciona tenantId ao pedido
     });
 
     console.log('Pedido a ser salvo:', order);
@@ -42,8 +46,12 @@ router.post('/', auth, async (req, res) => {
 // Listar pedidos do usuário autenticado
 router.get('/user', auth, async (req, res) => {
   try {
-    console.log('Buscando pedidos do usuário:', req.user.id);
-    const orders = await Order.find({ user: req.user.id }).populate('items.product', 'name price');
+    const { tenantId } = req.query;
+    if (!tenantId) {
+      return res.status(400).json({ message: 'tenantId é obrigatório.' });
+    }
+    console.log('Buscando pedidos do usuário:', req.user.id, 'para tenantId:', tenantId);
+    const orders = await Order.find({ user: req.user.id, tenantId }).populate('items.product', 'name price');
     console.log('Pedidos encontrados:', orders);
     res.json(orders);
   } catch (err) {
@@ -77,7 +85,7 @@ router.put('/:id/cancel', auth, async (req, res) => {
     console.log('Pedido cancelado com sucesso:', updatedOrder);
     res.json(updatedOrder);
   } catch (err) {
-    console.error('Erro ao cancelar pedido:', err.stack); // Log completo do erro
+    console.error('Erro ao cancelar pedido:', err.stack);
     res.status(500).json({ message: 'Erro ao cancelar pedido: ' + err.message });
   }
 });
