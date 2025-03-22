@@ -5,10 +5,10 @@ const app = express();
 
 // Configuração do CORS
 app.use(cors({
-  origin: 'https://pizzadabia.netlify.app', // Permite apenas o frontend no Netlify
-  credentials: true, // Permite envio de cookies ou headers como Authorization
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization'], // Headers permitidos
+  origin: 'https://pizzadabia.netlify.app',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Middlewares
@@ -17,7 +17,8 @@ app.use(express.json());
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
-app.use('/api/tenants', require('./routes/tenants')); // Certifique-se de que isso está incluído
+app.use('/api/tenants', require('./routes/tenants'));
+app.use('/api/products', require('./routes/products')); // Adicionado aqui
 
 // Conexão com MongoDB
 mongoose.connect(process.env.MONGO_URI, {
