@@ -22,9 +22,15 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Credenciais inválidas' });
     }
 
-    const payload = { user: { id: user.id } };
+    const payload = {
+      user: {
+        id: user.id,
+        isAdmin: user.isAdmin, // Adiciona isAdmin ao token
+        tenantId: user.tenantId, // Adiciona tenantId ao token
+      },
+    };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    console.log('Token gerado para usuário:', user.id);
+    console.log('Token gerado para usuário:', user.id, 'com payload:', payload);
 
     res.json({ token, user: user.toJSON() });
   } catch (err) {
@@ -50,12 +56,19 @@ router.post('/register', async (req, res) => {
       email,
       password,
       tenantId,
+      isAdmin: false, // Define como false por padrão no registro
     });
 
     await user.save();
     console.log('Usuário registrado:', user.id);
 
-    const payload = { user: { id: user.id } };
+    const payload = {
+      user: {
+        id: user.id,
+        isAdmin: user.isAdmin, // Adiciona isAdmin ao token
+        tenantId: user.tenantId, // Adiciona tenantId ao token
+      },
+    };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token, user: user.toJSON() });
