@@ -1,41 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const Tenant = require('../models/Tenant');
-const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
 
-// Criar uma nova pizzaria (apenas admin)
-router.post('/', [auth, adminAuth], async (req, res) => {
-  try {
-    const { tenantId, name, description } = req.body;
-    
-    if (!tenantId || !name) {
-      return res.status(400).json({ message: 'tenantId e name são obrigatórios.' });
-    }
+const tenantsController = require('../controllers/tenantsController');
+const authMiddleware = require('../middleware/auth');
+const adminAuthMiddleware = require('../middleware/adminAuth'); // Você pode criar um superAdmin se quiser
 
-    const existingTenant = await Tenant.findOne({ tenantId });
-    if (existingTenant) {
-      return res.status(400).json({ message: 'Este tenantId já está em uso.' });
-    }
+// Listar todos os tenants (apenas admins)
+router.get('/', authMiddleware, adminAuthMiddleware, tenantsController.getAllTenants);
 
-    const tenant = new Tenant({ tenantId, name, description });
-    await tenant.save();
-    res.status(201).json(tenant);
-  } catch (err) {
-    console.error('Erro ao criar tenant:', err);
-    res.status(500).json({ message: 'Erro ao criar pizzaria.' });
-  }
-});
+// Pegar tenant específico
+router.get('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.getTenantById);
 
-// Listar todas as pizzarias (apenas admin)
-router.get('/', [auth, adminAuth], async (req, res) => {
-  try {
-    const tenants = await Tenant.find();
-    res.json(tenants);
-  } catch (err) {
-    console.error('Erro ao listar tenants:', err);
-    res.status(500).json({ message: 'Erro ao listar pizzarias.' });
-  }
-});
+// Criar um tenant (apenas admins)
+router.post('/', authMiddleware, adminAuthMiddleware, tenantsController.createTenant);
+
+// Atualizar tenant (apenas admins)
+router.put('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.updateTenant);
+
+// Excluir tenant (apenas admins)
+router.delete('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.deleteTenant);
 
 module.exports = router;
