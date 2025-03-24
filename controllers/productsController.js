@@ -75,4 +75,27 @@ exports.updateProduct = async (req, res) => {
     res.json(updatedProduct);
   } catch (error) {
     console.error('❌ Error updating product:', error);
-    res.status(500).json({ message: 'Server error while
+    res.status(500).json({ message: 'Server error while updating product' });
+  }
+};
+
+// DELETE: Excluir um produto (somente admin)
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const deletedProduct = await Product.findOneAndDelete({
+      _id: productId,
+      tenantId: req.tenant._id
+    });
+
+    if (!deletedProduct) {
+      return res.status(404).json({ message: 'Product not found or access denied' });
+    }
+
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('❌ Error deleting product:', error);
+    res.status(500).json({ message: 'Server error while deleting product' });
+  }
+};
