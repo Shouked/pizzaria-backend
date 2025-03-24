@@ -1,13 +1,13 @@
+const mongoose = require('mongoose');
+
 const UserSchema = new mongoose.Schema({
   tenantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tenant',
+    type: String, // 🔥 Agora é o slug
     required: true
   },
   name: String,
   email: {
     type: String,
-    unique: false, // Se quiser, pode remover o unique para emails duplicados em tenants diferentes
     required: true
   },
   password: {
@@ -23,3 +23,5 @@ const UserSchema = new mongoose.Schema({
     default: false
   }
 }, { timestamps: true });
+
+module.exports = mongoose.model('User', UserSchema);
