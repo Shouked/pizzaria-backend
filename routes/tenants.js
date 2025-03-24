@@ -3,21 +3,23 @@ const router = express.Router();
 
 const tenantsController = require('../controllers/tenantsController');
 const authMiddleware = require('../middleware/auth');
-const adminAuthMiddleware = require('../middleware/adminAuth'); // Você pode criar um superAdmin se quiser
+const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 
-// Listar todos os tenants (apenas admins)
-router.get('/', authMiddleware, adminAuthMiddleware, tenantsController.getAllTenants);
+// ✅ Apenas usuários autenticados E superAdmins podem acessar essas rotas
 
-// Pegar tenant específico
-router.get('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.getTenantById);
+// Listar todos os tenants (apenas superAdmins)
+router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
 
-// Criar um tenant (apenas admins)
-router.post('/', authMiddleware, adminAuthMiddleware, tenantsController.createTenant);
+// Pegar um tenant específico (apenas superAdmins)
+router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
 
-// Atualizar tenant (apenas admins)
-router.put('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.updateTenant);
+// Criar um tenant (apenas superAdmins)
+router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant);
 
-// Excluir tenant (apenas admins)
-router.delete('/:tenantId', authMiddleware, adminAuthMiddleware, tenantsController.deleteTenant);
+// Atualizar tenant (apenas superAdmins)
+router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
+
+// Excluir tenant (apenas superAdmins)
+router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
 
 module.exports = router;
