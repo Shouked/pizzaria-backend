@@ -1,12 +1,23 @@
+// models/Product.js
 const mongoose = require('mongoose');
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String },
-  price: { type: Number, required: true },
-  category: { type: String, required: true },
-  image: { type: String },
-  tenantId: { type: String, required: true }, // Adicionado para multi-tenancy
-});
+const ProductSchema = new mongoose.Schema({
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tenant',
+    required: true // Obriga que cada produto pertença a um tenant específico
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: String,
+  price: {
+    type: Number,
+    required: true
+  },
+  imageUrl: String,
+}, { timestamps: true });
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.model('Product', ProductSchema);
