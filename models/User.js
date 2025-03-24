@@ -1,29 +1,26 @@
+// models/User.js
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
-const userSchema = new mongoose.Schema({
-  isAdmin: { type: Boolean, default: false },
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  address: {
-    cep: { type: String, required: true },
-    street: { type: String, required: true },
-    number: { type: String, required: true },
-    neighborhood: { type: String, required: true },
-    city: { type: String, required: true },
-    complement: { type: String },
+const UserSchema = new mongoose.Schema({
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tenant',
+    required: true
   },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  tenantId: { type: String }, // Adicionado como opcional
-  createdAt: { type: Date, default: Date.now },
-});
-
-userSchema.pre('save', async function(next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
+  name: String,
+  email: {
+    type: String,
+    unique: true, // Cuidado: se quiser o mesmo email em tenants diferentes, remova o unique!
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
-  next();
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', UserSchema);
