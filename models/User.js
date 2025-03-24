@@ -1,6 +1,3 @@
-// models/User.js
-const mongoose = require('mongoose');
-
 const UserSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -10,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   name: String,
   email: {
     type: String,
-    unique: true, // Cuidado: se quiser o mesmo email em tenants diferentes, remova o unique!
+    unique: false, // Se quiser, pode remover o unique para emails duplicados em tenants diferentes
     required: true
   },
   password: {
@@ -20,7 +17,9 @@ const UserSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  isSuperAdmin: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
-
-module.exports = mongoose.model('User', UserSchema);
