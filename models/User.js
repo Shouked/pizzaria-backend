@@ -2,12 +2,13 @@ const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
   tenantId: {
-    type: String, // 🔥 Agora é o slug
+    type: String, //  ALTERADO de ObjectId para String
     required: true
   },
   name: String,
   email: {
     type: String,
+    unique: false,
     required: true
   },
   password: {
