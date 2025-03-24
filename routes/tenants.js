@@ -5,7 +5,7 @@ const tenantsController = require('../controllers/tenantsController');
 const authMiddleware = require('../middleware/auth');
 const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 
-// ✅ Apenas usuários autenticados E superAdmins podem acessar essas rotas
+//  Apenas usuários autenticados E superAdmins podem acessar essas rotas
 
 // Listar todos os tenants (apenas superAdmins)
 router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
