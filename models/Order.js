@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
   tenantId: {
-    type: String, // 🔥 Agora é o slug
+    type: String, // 🔥 ALTERADO de ObjectId para String
     required: true
   },
   userId: {
@@ -11,4 +11,21 @@ const OrderSchema = new mongoose.Schema({
   },
   items: [{
     productId: {
-      type:
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product'
+    },
+    quantity: Number
+  }],
+  total: Number,
+  status: {
+    type: String,
+    enum: ['pending', 'completed', 'canceled'],
+    default: 'pending'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Order', OrderSchema);
