@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
   tenantId: {
-    type: String, // 🔥 Agora é o slug
+    type: String, // 🔥 ALTERADO de ObjectId para String
     required: true
   },
   name: {
@@ -15,7 +15,7 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  imageUrl: String
+  imageUrl: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', ProductSchema);
