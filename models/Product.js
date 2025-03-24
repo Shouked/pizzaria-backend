@@ -1,11 +1,9 @@
-// models/Product.js
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
   tenantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tenant',
-    required: true // Obriga que cada produto pertença a um tenant específico
+    type: String, // 🔥 Agora é o slug
+    required: true
   },
   name: {
     type: String,
@@ -17,7 +15,7 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  imageUrl: String,
+  imageUrl: String
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', ProductSchema);
