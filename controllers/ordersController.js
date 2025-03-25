@@ -1,11 +1,26 @@
 const Order = require('../models/Order');
 
+// 🔹 NOVO MÉTODO: Buscar somente os pedidos do usuário logado
+exports.getOrdersByUser = async (req, res) => {
+  try {
+    const query = {
+      tenantId: req.tenant._id,
+      userId: req.user.userId
+    };
+
+    const orders = await Order.find(query).populate('items.productId');
+    res.json(orders);
+  } catch (error) {
+    console.error('❌ Erro ao buscar pedidos do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar pedidos do usuário' });
+  }
+};
+
 // GET: Listar pedidos do usuário ou de todos (se for admin)
 exports.getOrders = async (req, res) => {
   try {
     const query = { tenantId: req.tenant._id };
 
-    // Se o usuário não for admin, ele só vê os próprios pedidos
     if (!req.user.isAdmin) {
       query.userId = req.user.userId;
     }
@@ -30,7 +45,6 @@ exports.getOrderById = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Se não for admin, só pode acessar o próprio pedido
     if (!req.user.isAdmin && order.userId.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied to this order' });
     }
