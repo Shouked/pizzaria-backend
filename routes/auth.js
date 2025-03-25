@@ -1,17 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/auth');
 
-// Rota de login
+// Rota de login (por tenant)
 router.post('/:tenantId/login', authController.login);
 
-// Rota de registro
+// Rota de registro (por tenant)
 router.post('/:tenantId/register', authController.register);
 
-// Rota para pegar o usuário autenticado (quem está logado) - opcional
-const authMiddleware = require('../middleware/auth');
-const tenantMiddleware = require('../middleware/tenant');
-
-router.get('/:tenantId/me', tenantMiddleware, authMiddleware, authController.getMe);
+// Rota para obter o perfil do usuário logado
+router.get('/me', authMiddleware, authController.getProfile);
 
 module.exports = router;
