@@ -26,7 +26,11 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('✅ Tenant encontrado:', tenant);
 
-    req.tenant = tenant;
+    req.tenant = {
+      _id: tenant._id,
+      tenantId: tenant.tenantId
+    };
+
     next();
   } catch (error) {
     console.error('❌ Erro no tenantMiddleware:', error);
