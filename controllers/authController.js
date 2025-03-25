@@ -1,113 +1,80 @@
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const generateToken = (user) => {
-  return jwt.sign(
-    {
-      userId: user._id,
-      tenantId: user.tenantId,
-      isAdmin: user.isAdmin
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '1d' }
-  );
-};
-
-// POST: Registro
 exports.register = async (req, res) => {
+  const { name, email, phone, address, password, tenantId } = req.body;
+
   try {
-    const {
-      tenantId, name, email, password, phone, address
-    } = req.body;
-
-    if (!tenantId || !name || !email || !password) {
-      return res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ msg: 'Usuário já existe' });
     }
 
-    const existing = await User.findOne({ email, tenantId });
-    if (existing) {
-      return res.status(400).json({ message: 'E-mail já cadastrado.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      tenantId,
+    user = new User({
       name,
       email,
-      password: hashedPassword,
       phone,
-      address
+      address,
+      password: await bcrypt.hash(password, 10),
+      tenantId,
     });
 
-    const savedUser = await newUser.save();
-    const token = generateToken(savedUser);
+    await user.save();
 
-    res.status(201).json({
-      token,
+    const payload = {
       user: {
-        id: savedUser._id,
-        name: savedUser.name,
-        email: savedUser.email,
-        isAdmin: savedUser.isAdmin,
-        tenantId: savedUser.tenantId
-      }
-    });
-  } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
-    res.status(500).json({ message: 'Erro ao registrar usuário.' });
+        id: user.id,
+        tenantId: user.tenantId,
+      },
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, tenantId: user.tenantId } });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// POST: Login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-  const { tenantId } = req.params;
+  const { tenantId } = req.params; // Alterado para pegar tenantId da URL
 
   try {
     const user = await User.findOne({ email, tenantId });
-
     if (!user) {
-      return res.status(401).json({ message: 'Credenciais inválidas' });
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ message: 'Credenciais inválidas' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
     }
 
-    const token = generateToken(user);
-
-    res.json({
-      token,
+    const payload = {
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        tenantId: user.tenantId
-      }
-    });
-  } catch (error) {
-    console.error('Erro no login:', error);
-    res.status(500).json({ message: 'Erro ao realizar login' });
+        id: user.id,
+        tenantId: user.tenantId,
+      },
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, tenantId: user.tenantId, isAdmin: user.isAdmin } });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// GET: Perfil do usuário logado
-exports.getProfile = async (req, res) => {
+exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
-    }
-
+    const user = await User.findById(req.user.id).select('-password');
     res.json(user);
-  } catch (error) {
-    console.error('Erro ao carregar perfil:', error);
-    res.status(500).json({ message: 'Erro ao carregar perfil' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
