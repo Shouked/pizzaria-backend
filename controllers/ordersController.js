@@ -1,11 +1,25 @@
 const Order = require('../models/Order');
 
-// GET: Listar pedidos do usuário ou de todos (se for admin)
+// ✅ GET: Pedidos do usuário autenticado
+exports.getOrdersByUser = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      tenantId: req.tenant.tenantId,
+      userId: req.user.userId
+    }).populate('items.productId');
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Erro ao buscar pedidos do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar pedidos do usuário' });
+  }
+};
+
+// ✅ GET: Listar pedidos do usuário ou todos (se for admin)
 exports.getOrders = async (req, res) => {
   try {
     const query = { tenantId: req.tenant.tenantId };
 
-    // Se o usuário não for admin, ele só vê os próprios pedidos
     if (!req.user.isAdmin) {
       query.userId = req.user.userId;
     }
@@ -13,42 +27,41 @@ exports.getOrders = async (req, res) => {
     const orders = await Order.find(query).populate('items.productId');
     res.json(orders);
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json({ message: 'Server error while fetching orders' });
+    console.error('Erro ao buscar pedidos:', error);
+    res.status(500).json({ message: 'Erro ao buscar pedidos' });
   }
 };
 
-// GET: Buscar um pedido específico do tenant (admin ou dono do pedido)
+// ✅ GET: Buscar pedido específico
 exports.getOrderById = async (req, res) => {
   try {
-    const order = await Order.findOne({ 
-      _id: req.params.orderId, 
+    const order = await Order.findOne({
+      _id: req.params.orderId,
       tenantId: req.tenant.tenantId
     }).populate('items.productId');
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: 'Pedido não encontrado' });
     }
 
-    // Se não for admin, só pode acessar o próprio pedido
     if (!req.user.isAdmin && order.userId.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Access denied to this order' });
+      return res.status(403).json({ message: 'Acesso negado a este pedido' });
     }
 
     res.json(order);
   } catch (error) {
-    console.error('Error fetching order:', error);
-    res.status(500).json({ message: 'Server error while fetching order' });
+    console.error('Erro ao buscar pedido:', error);
+    res.status(500).json({ message: 'Erro ao buscar pedido' });
   }
 };
 
-// POST: Criar novo pedido (usuário autenticado)
+// ✅ POST: Criar pedido
 exports.createOrder = async (req, res) => {
   try {
     const { items, total } = req.body;
 
     const newOrder = new Order({
-      tenantId: req.tenant.tenantId, // 🔄 Aqui usamos a string
+      tenantId: req.tenant.tenantId,
       userId: req.user.userId,
       items,
       total,
@@ -58,12 +71,12 @@ exports.createOrder = async (req, res) => {
     const savedOrder = await newOrder.save();
     res.status(201).json(savedOrder);
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ message: 'Server error while creating order' });
+    console.error('Erro ao criar pedido:', error);
+    res.status(500).json({ message: 'Erro ao criar pedido' });
   }
 };
 
-// PUT: Atualizar status de pedido (apenas admin)
+// ✅ PUT: Atualizar status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -76,17 +89,17 @@ exports.updateOrderStatus = async (req, res) => {
     );
 
     if (!updatedOrder) {
-      return res.status(404).json({ message: 'Order not found or access denied' });
+      return res.status(404).json({ message: 'Pedido não encontrado' });
     }
 
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Error updating order status:', error);
-    res.status(500).json({ message: 'Server error while updating order status' });
+    console.error('Erro ao atualizar pedido:', error);
+    res.status(500).json({ message: 'Erro ao atualizar pedido' });
   }
 };
 
-// DELETE: Excluir um pedido (apenas admin)
+// ✅ DELETE: Excluir pedido
 exports.deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -97,12 +110,12 @@ exports.deleteOrder = async (req, res) => {
     });
 
     if (!deletedOrder) {
-      return res.status(404).json({ message: 'Order not found or access denied' });
+      return res.status(404).json({ message: 'Pedido não encontrado' });
     }
 
-    res.json({ message: 'Order deleted successfully' });
+    res.json({ message: 'Pedido excluído com sucesso' });
   } catch (error) {
-    console.error('Error deleting order:', error);
-    res.status(500).json({ message: 'Server error while deleting order' });
+    console.error('Erro ao deletar pedido:', error);
+    res.status(500).json({ message: 'Erro ao deletar pedido' });
   }
 };
