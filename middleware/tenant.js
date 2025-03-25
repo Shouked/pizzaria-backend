@@ -10,14 +10,14 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('--- Tenant Middleware Debug ---');
     console.log('tenantIdFromUrl:', tenantIdFromUrl);
-    console.log('tenantId resolved:', tenantId);
+    console.log('tenantId:', tenantId);
 
     if (!tenantId) {
       console.log('❌ Nenhum tenantId fornecido');
       return res.status(400).json({ message: 'Tenant ID is required' });
     }
 
-    const tenant = await Tenant.findOne({ tenantId: tenantId });
+    const tenant = await Tenant.findOne({ tenantId });
 
     if (!tenant) {
       console.log('❌ Tenant não encontrado no banco');
@@ -26,11 +26,8 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('✅ Tenant encontrado:', tenant);
 
-    // Define exatamente as propriedades que os controllers esperam
-    req.tenant = {
-      _id: tenant._id.toString(), // em formato de string
-      tenantId: tenant.tenantId
-    };
+    // Esta linha é a chave!
+    req.tenant = tenant.toObject();
 
     next();
   } catch (error) {
