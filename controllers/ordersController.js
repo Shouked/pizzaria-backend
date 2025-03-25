@@ -1,26 +1,11 @@
 const Order = require('../models/Order');
 
-// 🔹 NOVO MÉTODO: Buscar somente os pedidos do usuário logado
-exports.getOrdersByUser = async (req, res) => {
-  try {
-    const query = {
-      tenantId: req.tenant._id,
-      userId: req.user.userId
-    };
-
-    const orders = await Order.find(query).populate('items.productId');
-    res.json(orders);
-  } catch (error) {
-    console.error('❌ Erro ao buscar pedidos do usuário:', error);
-    res.status(500).json({ message: 'Erro ao buscar pedidos do usuário' });
-  }
-};
-
 // GET: Listar pedidos do usuário ou de todos (se for admin)
 exports.getOrders = async (req, res) => {
   try {
-    const query = { tenantId: req.tenant._id };
+    const query = { tenantId: req.tenant.tenantId };
 
+    // Se o usuário não for admin, ele só vê os próprios pedidos
     if (!req.user.isAdmin) {
       query.userId = req.user.userId;
     }
@@ -38,13 +23,14 @@ exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findOne({ 
       _id: req.params.orderId, 
-      tenantId: req.tenant._id 
+      tenantId: req.tenant.tenantId
     }).populate('items.productId');
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    // Se não for admin, só pode acessar o próprio pedido
     if (!req.user.isAdmin && order.userId.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied to this order' });
     }
@@ -62,7 +48,7 @@ exports.createOrder = async (req, res) => {
     const { items, total } = req.body;
 
     const newOrder = new Order({
-      tenantId: req.tenant._id,
+      tenantId: req.tenant.tenantId, // 🔄 Aqui usamos a string
       userId: req.user.userId,
       items,
       total,
@@ -84,7 +70,7 @@ exports.updateOrderStatus = async (req, res) => {
     const { status } = req.body;
 
     const updatedOrder = await Order.findOneAndUpdate(
-      { _id: orderId, tenantId: req.tenant._id },
+      { _id: orderId, tenantId: req.tenant.tenantId },
       { status },
       { new: true }
     );
@@ -100,14 +86,14 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// DELETE: Excluir um pedido (raro, mas só admin pode)
+// DELETE: Excluir um pedido (apenas admin)
 exports.deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
 
     const deletedOrder = await Order.findOneAndDelete({
       _id: orderId,
-      tenantId: req.tenant._id
+      tenantId: req.tenant.tenantId
     });
 
     if (!deletedOrder) {
