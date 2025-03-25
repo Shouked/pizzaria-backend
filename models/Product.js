@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
   tenantId: {
-    type: String, // 🔥 ALTERADO de ObjectId para String
+    type: String, // This matches the 'tenantId' string field of the tenant, not the _id
     required: true
   },
   name: {
@@ -16,6 +16,10 @@ const ProductSchema = new mongoose.Schema({
     required: true
   },
   imageUrl: String,
+  category: {
+    type: String,
+    required: true
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', ProductSchema);
