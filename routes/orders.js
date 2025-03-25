@@ -5,8 +5,9 @@ const authMiddleware = require('../middleware/auth');
 const adminAuthMiddleware = require('../middleware/adminAuth');
 const ordersController = require('../controllers/ordersController');
 
-// 🔹 NOVA ROTA: Buscar apenas os pedidos do usuário logado
-router.get('/:tenantId/user', tenantMiddleware, authMiddleware, ordersController.getOrdersByUser);
+// Teste para garantir que as funções existem
+console.log('✅ getOrders:', typeof ordersController.getOrders);
+console.log('✅ createOrder:', typeof ordersController.createOrder);
 
 // Listar pedidos do usuário ou todos se for admin
 router.get('/:tenantId/orders', tenantMiddleware, authMiddleware, ordersController.getOrders);
