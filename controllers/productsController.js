@@ -5,7 +5,7 @@ exports.getAllProducts = async (req, res) => {
   try {
     console.log('💡 [getAllProducts] req.tenant:', req.tenant);
 
-    if (!req.tenant) {
+    if (!req.tenant || !req.tenant.tenantId) {
       console.log('❌ Nenhum tenant detectado!');
       return res.status(400).json({ message: 'Tenant not resolved' });
     }
@@ -27,10 +27,11 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const { productId } = req.params;
+    const tenantId = req.tenant.tenantId;
 
     const product = await Product.findOne({
       _id: productId,
-      tenantId: req.tenant.tenantId
+      tenantId
     });
 
     if (!product) {
