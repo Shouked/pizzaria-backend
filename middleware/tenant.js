@@ -10,7 +10,7 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('--- Tenant Middleware Debug ---');
     console.log('tenantIdFromUrl:', tenantIdFromUrl);
-    console.log('tenantId:', tenantId);
+    console.log('tenantId resolved:', tenantId);
 
     if (!tenantId) {
       console.log('❌ Nenhum tenantId fornecido');
@@ -26,8 +26,9 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('✅ Tenant encontrado:', tenant);
 
+    // Define exatamente as propriedades que os controllers esperam
     req.tenant = {
-      _id: tenant._id,
+      _id: tenant._id.toString(), // em formato de string
       tenantId: tenant.tenantId
     };
 
