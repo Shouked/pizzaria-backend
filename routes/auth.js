@@ -4,11 +4,14 @@ const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
-router.post('/:tenantId/login', tenantMiddleware, authController.login);
-router.post('/:tenantId/register', tenantMiddleware, authController.register);
-router.get('/me', authMiddleware, authController.getMe);
-
-// Nova rota adicionada, mas possivelmente na ordem errada ou com middleware
+// Rota para superadmins (linha 7)
 router.post('/superadmin/login', authController.superAdminLogin);
+
+// Rotas que usam tenantMiddleware
+router.post('/:tenantId/login', tenantMiddleware, authController.login); // Linha 11
+router.post('/:tenantId/register', tenantMiddleware, authController.register);
+
+// Rota protegida
+router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
