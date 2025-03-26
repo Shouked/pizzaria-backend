@@ -1,95 +1,106 @@
 const Tenant = require('../models/Tenant');
 
-// GET: Listar todos os tenants (para administração)
+// GET /api/tenants - Listar todos os tenants (apenas superAdmin)
 exports.getAllTenants = async (req, res) => {
   try {
-    const tenants = await Tenant.find();
+    const tenants = await Tenant.find().sort({ createdAt: -1 });
     res.json(tenants);
-  } catch (error) {
-    console.error('Error fetching tenants:', error);
-    res.status(500).json({ message: 'Server error while fetching tenants' });
+  } catch (err) {
+    console.error('Erro ao buscar tenants:', err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// GET: Buscar um tenant específico por ID
+// GET /api/tenants/:tenantId - Buscar tenant por tenantId
 exports.getTenantById = async (req, res) => {
-  const { tenantId } = req.params;
-
   try {
-    const tenant = await Tenant.findById(tenantId);
-
+    const tenant = await Tenant.findOne({ tenantId: req.params.tenantId });
     if (!tenant) {
-      return res.status(404).json({ message: 'Tenant not found' });
+      return res.status(404).json({ msg: 'Tenant não encontrado' });
     }
-
     res.json(tenant);
-  } catch (error) {
-    console.error('Error fetching tenant:', error);
-    res.status(500).json({ message: 'Server error while fetching tenant' });
+  } catch (err) {
+    console.error('Erro ao buscar tenant:', err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// POST: Criar um novo tenant
+// POST /api/tenants - Criar novo tenant (somente superAdmin)
 exports.createTenant = async (req, res) => {
-  const { name, logoUrl, primaryColor, secondaryColor } = req.body;
+  let { tenantId, name, logoUrl, primaryColor, secondaryColor } = req.body;
 
   try {
-    if (!name) {
-      return res.status(400).json({ message: 'Name is required' });
+    if (!tenantId || !name) {
+      return res.status(400).json({ msg: 'TenantId e nome são obrigatórios' });
     }
 
-    const tenant = new Tenant({
+    // Normaliza o tenantId: letras minúsculas, sem espaços ou caracteres especiais
+    tenantId = tenantId
+      .trim()
+      .toLowerCase()
+      .replace(/\s/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+    // Valida o formato
+    if (!/^[a-z0-9]+$/.test(tenantId)) {
+      return res.status(400).json({ msg: 'TenantId inválido. Use apenas letras e números, sem espaços ou acentos.' });
+    }
+
+    const existing = await Tenant.findOne({ tenantId });
+    if (existing) {
+      return res.status(400).json({ msg: 'Já existe uma pizzaria com esse TenantId.' });
+    }
+
+    const newTenant = new Tenant({
+      tenantId,
       name,
       logoUrl,
       primaryColor,
-      secondaryColor
+      secondaryColor,
     });
 
-    const savedTenant = await tenant.save();
-    res.status(201).json(savedTenant);
-  } catch (error) {
-    console.error('Error creating tenant:', error);
-    res.status(500).json({ message: 'Server error while creating tenant' });
+    await newTenant.save();
+    res.status(201).json(newTenant);
+  } catch (err) {
+    console.error('Erro ao criar tenant:', err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// PUT: Atualizar um tenant existente
+// PUT /api/tenants/:tenantId - Atualizar tenant
 exports.updateTenant = async (req, res) => {
-  const { tenantId } = req.params;
-  const { name, logoUrl, primaryColor, secondaryColor } = req.body;
-
   try {
-    const updatedTenant = await Tenant.findByIdAndUpdate(
-      tenantId,
-      { name, logoUrl, primaryColor, secondaryColor },
+    const updates = req.body;
+
+    const updated = await Tenant.findOneAndUpdate(
+      { tenantId: req.params.tenantId },
+      updates,
       { new: true }
     );
 
-    if (!updatedTenant) {
-      return res.status(404).json({ message: 'Tenant not found' });
+    if (!updated) {
+      return res.status(404).json({ msg: 'Tenant não encontrado' });
     }
 
-    res.json(updatedTenant);
-  } catch (error) {
-    console.error('Error updating tenant:', error);
-    res.status(500).json({ message: 'Server error while updating tenant' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar tenant:', err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// DELETE: Excluir um tenant
+// DELETE /api/tenants/:tenantId - Deletar tenant
 exports.deleteTenant = async (req, res) => {
-  const { tenantId } = req.params;
-
   try {
-    const deletedTenant = await Tenant.findByIdAndDelete(tenantId);
+    const deleted = await Tenant.findOneAndDelete({ tenantId: req.params.tenantId });
 
-    if (!deletedTenant) {
-      return res.status(404).json({ message: 'Tenant not found' });
+    if (!deleted) {
+      return res.status(404).json({ msg: 'Tenant não encontrado' });
     }
 
-    res.json({ message: 'Tenant deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting tenant:', error);
-    res.status(500).json({ message: 'Server error while deleting tenant' });
+    res.json({ msg: 'Tenant deletado com sucesso' });
+  } catch (err) {
+    console.error('Erro ao deletar tenant:', err.message);
+    res.status(500).send('Erro no servidor');
   }
 };
