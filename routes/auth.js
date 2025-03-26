@@ -4,14 +4,14 @@ const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
-// Rota para superadmins (sem tenantMiddleware, definida primeiro)
+// Rota para superadmins
 router.post('/superadmin/login', authController.superAdminLogin);
 
 // Rotas que usam tenantMiddleware
 router.post('/:tenantId/login', tenantMiddleware, authController.login);
 router.post('/:tenantId/register', tenantMiddleware, authController.register);
 
-// Rota protegida por authMiddleware
+// Rota protegida
 router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
