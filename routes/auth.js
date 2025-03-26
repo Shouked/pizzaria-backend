@@ -8,7 +8,7 @@ const tenantMiddleware = require('../middleware/tenant');
 router.post('/superadmin/login', authController.superAdminLogin);
 
 // Rotas que usam tenantMiddleware
-router.post('/:tenantId/login', tenantMiddleware, authController.login);
+router.post('/:tenantId/login', tenantMiddleware, authController.login); // Linha 11
 router.post('/:tenantId/register', tenantMiddleware, authController.register);
 
 // Rota protegida
