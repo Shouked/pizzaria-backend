@@ -1,3 +1,5 @@
+const Tenant = require('../models/Tenant'); // Adicionei a importação que faltava no trecho enviado
+
 const tenantMiddleware = async (req, res, next) => {
   try {
     const tenantIdFromUrl = req.params.tenantId;
@@ -29,3 +31,5 @@ const tenantMiddleware = async (req, res, next) => {
     res.status(500).json({ message: 'Server error in tenant middleware' });
   }
 };
+
+module.exports = tenantMiddleware; // Adicionado
