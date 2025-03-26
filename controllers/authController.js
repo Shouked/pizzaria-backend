@@ -5,7 +5,8 @@ const Tenant = require('../models/Tenant');
 
 // Criar conta
 exports.register = async (req, res) => {
-  const { name, email, phone, address, password, tenantId } = req.body;
+  const { name, email, phone, address, password } = req.body;
+  const { tenantId } = req.params; // Pega o tenantId da URL
 
   try {
     // Verifica se o tenant existe
