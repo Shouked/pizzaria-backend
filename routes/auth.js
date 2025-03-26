@@ -4,14 +4,16 @@ const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
-// Rota para superadmins (linha 7)
+// 🔐 Login do superadmin (não precisa de tenantId)
 router.post('/superadmin/login', authController.superAdminLogin);
 
-// Rotas que usam tenantMiddleware (linha 11)
+// 🔐 Login do cliente (requer tenantId na URL)
 router.post('/:tenantId/login', tenantMiddleware, authController.login);
+
+// 📝 Cadastro de cliente (requer tenantId na URL e no body)
 router.post('/:tenantId/register', tenantMiddleware, authController.register);
 
-// Rota protegida
+// 👤 Obter dados do usuário logado
 router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
