@@ -3,61 +3,43 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 
-// Função para login de superadmin
-const superAdminLogin = async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user || !user.isSuperAdmin) {
-      return res.status(400).json({ msg: 'Credenciais inválidas ou não é superadmin' });
-    }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Credenciais inválidas' });
-    }
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      isSuperAdmin: user.isSuperAdmin
-    };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        isSuperAdmin: user.isSuperAdmin
-      }
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Erro no servidor');
-  }
-};
-
-// Função para login comum
-const login = async (req, res) => {
-  const { email, password } = req.body;
+exports.register = async (req, res) => {
+  const { name, email, phone, address, password } = req.body;
   const { tenantId } = req.params;
+
   try {
-    const user = await User.findOne({ email, tenantId });
-    if (!user) {
-      return res.status(400).json({ msg: 'Credenciais inválidas' });
+    const tenant = await Tenant.findOne({ tenantId }); // Busca pelo campo tenantId
+    if (!tenant) {
+      return res.status(400).json({ msg: 'TenantId inválido' });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Credenciais inválidas' });
+
+    let user = await User.findOne({ email, tenantId });
+    if (user) {
+      return res.status(400).json({ msg: 'Usuário já existe para este tenant' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user = new User({
+      name,
+      email,
+      phone,
+      address,
+      password: hashedPassword,
+      tenantId
+    });
+
+    await user.save();
+
     const payload = {
       userId: user.id,
       tenantId: user.tenantId,
       email: user.email,
       isAdmin: user.isAdmin
     };
+
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
     res.json({
       token,
       user: {
@@ -69,51 +51,58 @@ const login = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Erro no registro:', err.message);
     res.status(500).send('Erro no servidor');
   }
 };
 
-// Função para registro
-const register = async (req, res) => {
-  const { name, email, password, tenantId } = req.body;
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+  const { tenantId } = req.params;
+
   try {
-    let user = await User.findOne({ email, tenantId });
-    if (user) {
-      return res.status(400).json({ msg: 'Usuário já existe' });
+    const user = await User.findOne({ email, tenantId });
+    if (!user) {
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
     }
-    user = new User({
-      name,
-      email,
-      password: await bcrypt.hash(password, 12),
-      tenantId
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
+    }
+
+    const payload = {
+      userId: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      isAdmin: user.isAdmin
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        tenantId: user.tenantId,
+        isAdmin: user.isAdmin
+      }
     });
-    await user.save();
-    res.json({ msg: 'Usuário registrado com sucesso' });
   } catch (err) {
-    console.error(err.message);
+    console.error('Erro no login:', err.message);
     res.status(500).send('Erro no servidor');
   }
 };
 
-// Função para obter dados do usuário autenticado
-const getMe = async (req, res) => {
+exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
-    if (!user) {
-      return res.status(404).json({ msg: 'Usuário não encontrado' });
-    }
+    if (!user) return res.status(404).json({ msg: 'Usuário não encontrado' });
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.error('Erro ao buscar perfil:', err.message);
     res.status(500).send('Erro no servidor');
   }
-};
-
-// Exportação explícita
-module.exports = {
-  superAdminLogin,
-  login,
-  register,
-  getMe
 };
