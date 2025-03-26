@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 
-// Função para superadmin login
+// Função para login de superadmin
 const superAdminLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -98,9 +98,45 @@ const login = async (req, res) => {
   }
 };
 
-// Outras funções
-const register = async (req, res) => { /* ... */ };
-const getMe = async (req, res) => { /* ... */ };
+// Função para registro (exemplo básico, ajuste conforme seu código original)
+const register = async (req, res) => {
+  const { name, email, password, tenantId } = req.body;
+
+  try {
+    let user = await User.findOne({ email, tenantId });
+    if (user) {
+      return res.status(400).json({ msg: 'Usuário já existe' });
+    }
+
+    user = new User({
+      name,
+      email,
+      password: await bcrypt.hash(password, 12),
+      tenantId
+    });
+
+    await user.save();
+
+    res.json({ msg: 'Usuário registrado com sucesso' });
+  } catch (err) {
+    console.error('Erro no registro:', err.message);
+    res.status(500).send('Erro no servidor');
+  }
+};
+
+// Função para obter dados do usuário autenticado
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'Usuário não encontrado' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error('Erro no getMe:', err.message);
+    res.status(500).send('Erro no servidor');
+  }
+};
 
 // Exportação explícita como objeto
 module.exports = {
