@@ -1,3 +1,5 @@
+// src/controllers/authController.js
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -6,24 +8,17 @@ const Tenant = require('../models/Tenant');
 // Criar conta
 exports.register = async (req, res) => {
   const { name, email, phone, address, password } = req.body;
-  const { tenantId } = req.params; // Pega o tenantId da URL
+  const { tenantId } = req.params;
 
   try {
-    // Verifica se o tenant existe
     const tenant = await Tenant.findOne({ tenantId });
-    if (!tenant) {
-      return res.status(400).json({ msg: 'TenantId inválido' });
-    }
+    if (!tenant) return res.status(400).json({ msg: 'TenantId inválido' });
 
-    // Verifica se o usuário já existe
-    let user = await User.findOne({ email, tenantId });
-    if (user) {
-      return res.status(400).json({ msg: 'Usuário já existe para este tenant' });
-    }
+    const userExists = await User.findOne({ email, tenantId });
+    if (userExists) return res.status(400).json({ msg: 'Usuário já existe neste tenant' });
 
-    // Cria novo usuário
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = new User({
+    const user = new User({
       name,
       email,
       phone,
@@ -34,7 +29,6 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Cria token
     const payload = {
       userId: user.id,
       tenantId: user.tenantId,
@@ -56,7 +50,7 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error('Erro no registro:', err.message);
-    res.status(500).send('Erro no servidor');
+    res.status(500).json({ msg: 'Erro no servidor ao registrar usuário' });
   }
 };
 
@@ -67,14 +61,10 @@ exports.login = async (req, res) => {
 
   try {
     const user = await User.findOne({ email, tenantId });
-    if (!user) {
-      return res.status(400).json({ msg: 'Credenciais inválidas' });
-    }
+    if (!user) return res.status(400).json({ msg: 'Credenciais inválidas' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Credenciais inválidas' });
-    }
+    if (!isMatch) return res.status(400).json({ msg: 'Credenciais inválidas' });
 
     const payload = {
       userId: user.id,
@@ -97,7 +87,7 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error('Erro no login:', err.message);
-    res.status(500).send('Erro no servidor');
+    res.status(500).json({ msg: 'Erro no servidor ao fazer login' });
   }
 };
 
@@ -109,6 +99,6 @@ exports.getMe = async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('Erro ao buscar perfil:', err.message);
-    res.status(500).send('Erro no servidor');
+    res.status(500).json({ msg: 'Erro no servidor ao buscar perfil' });
   }
 };
