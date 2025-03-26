@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 
-exports.superAdminLogin = async (req, res) => {
+// Função para superadmin login
+const superAdminLogin = async (req, res) => {
   const { email, password } = req.body;
 
   console.log('Iniciando superadmin login para:', { email });
@@ -44,7 +45,8 @@ exports.superAdminLogin = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+// Função para login comum
+const login = async (req, res) => {
   const { email, password } = req.body;
   const { tenantId } = req.params;
 
@@ -96,8 +98,14 @@ exports.login = async (req, res) => {
   }
 };
 
-// Outras funções (register, getMe) devem estar aqui também
-exports.register = async (req, res) => { /* ... */ };
-exports.getMe = async (req, res) => { /* ... */ };
+// Outras funções
+const register = async (req, res) => { /* ... */ };
+const getMe = async (req, res) => { /* ... */ };
 
-module.exports = exports;
+// Exportação explícita como objeto
+module.exports = {
+  superAdminLogin,
+  login,
+  register,
+  getMe
+};
