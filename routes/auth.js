@@ -7,7 +7,7 @@ const tenantMiddleware = require('../middleware/tenant');
 // Rota para superadmins (linha 7)
 router.post('/superadmin/login', authController.superAdminLogin);
 
-// Rotas que usam tenantMiddleware
+// Rotas que usam tenantMiddleware (linha 11)
 router.post('/:tenantId/login', tenantMiddleware, authController.login);
 router.post('/:tenantId/register', tenantMiddleware, authController.register);
 
