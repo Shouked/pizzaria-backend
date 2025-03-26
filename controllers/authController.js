@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
   const { tenantId } = req.params;
 
   try {
-    const tenant = await Tenant.findOne({ tenantId });
+    const tenant = await Tenant.findOne({ tenantId }); // Busca pelo campo tenantId
     if (!tenant) {
       return res.status(400).json({ msg: 'TenantId inválido' });
     }
