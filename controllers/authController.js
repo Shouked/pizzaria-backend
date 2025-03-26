@@ -1,24 +1,26 @@
-// src/controllers/authController.js
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 
-// Criar conta
 exports.register = async (req, res) => {
   const { name, email, phone, address, password } = req.body;
   const { tenantId } = req.params;
 
   try {
     const tenant = await Tenant.findOne({ tenantId });
-    if (!tenant) return res.status(400).json({ msg: 'TenantId inválido' });
+    if (!tenant) {
+      return res.status(400).json({ msg: 'TenantId inválido' });
+    }
 
-    const userExists = await User.findOne({ email, tenantId });
-    if (userExists) return res.status(400).json({ msg: 'Usuário já existe neste tenant' });
+    let user = await User.findOne({ email, tenantId });
+    if (user) {
+      return res.status(400).json({ msg: 'Usuário já existe para este tenant' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
+
+    user = new User({
       name,
       email,
       phone,
@@ -50,21 +52,24 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error('Erro no registro:', err.message);
-    res.status(500).json({ msg: 'Erro no servidor ao registrar usuário' });
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// Login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const { tenantId } = req.params;
 
   try {
     const user = await User.findOne({ email, tenantId });
-    if (!user) return res.status(400).json({ msg: 'Credenciais inválidas' });
+    if (!user) {
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Credenciais inválidas' });
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Credenciais inválidas' });
+    }
 
     const payload = {
       userId: user.id,
@@ -87,11 +92,10 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error('Erro no login:', err.message);
-    res.status(500).json({ msg: 'Erro no servidor ao fazer login' });
+    res.status(500).send('Erro no servidor');
   }
 };
 
-// Obter perfil do usuário logado
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
@@ -99,6 +103,6 @@ exports.getMe = async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('Erro ao buscar perfil:', err.message);
-    res.status(500).json({ msg: 'Erro no servidor ao buscar perfil' });
+    res.status(500).send('Erro no servidor');
   }
 };
