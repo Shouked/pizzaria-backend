@@ -1,19 +1,22 @@
+// ✅ REVISÃO COMPLETA DOS ARQUIVOS DE LOGIN E REGISTRO
+
 const express = require('express');
 const router = express.Router();
+
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
-// 🔐 Login do superadmin (não precisa de tenantId)
+// Login do super admin (sem tenantId)
 router.post('/superadmin/login', authController.superAdminLogin);
 
-// 🔐 Login do cliente (requer tenantId na URL)
+// Login normal com tenantId (ex: /pizza-bia/login)
 router.post('/:tenantId/login', tenantMiddleware, authController.login);
 
-// 📝 Cadastro de cliente (requer tenantId na URL e no body)
+// Registro com tenantId na URL
 router.post('/:tenantId/register', tenantMiddleware, authController.register);
 
-// 👤 Obter dados do usuário logado
+// Obter perfil do usuário autenticado
 router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
