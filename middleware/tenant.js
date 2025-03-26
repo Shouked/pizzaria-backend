@@ -1,12 +1,7 @@
-const Tenant = require('../models/Tenant');
-
 const tenantMiddleware = async (req, res, next) => {
   try {
     const tenantIdFromUrl = req.params.tenantId;
-    const tenantIdFromHeader = req.headers['x-tenant-id'];
-    const tenantIdFromToken = req.user?.tenantId;
-
-    const tenantId = tenantIdFromUrl || tenantIdFromHeader || tenantIdFromToken;
+    const tenantId = tenantIdFromUrl || req.headers['x-tenant-id'] || req.user?.tenantId;
 
     console.log('--- Tenant Middleware Debug ---');
     console.log('tenantIdFromUrl:', tenantIdFromUrl);
@@ -17,7 +12,9 @@ const tenantMiddleware = async (req, res, next) => {
       return res.status(400).json({ message: 'Tenant ID is required' });
     }
 
-    const tenant = await Tenant.findOne({ tenantId }); // Busca pelo campo tenantId
+    console.log('Buscando tenant no banco para tenantId:', tenantId);
+    const tenant = await Tenant.findOne({ tenantId });
+    console.log('Resultado da busca:', tenant || 'Nenhum tenant encontrado');
 
     if (!tenant) {
       console.log('❌ Tenant não encontrado no banco');
@@ -25,13 +22,10 @@ const tenantMiddleware = async (req, res, next) => {
     }
 
     console.log('✅ Tenant encontrado:', tenant);
-
     req.tenant = tenant.toObject();
     next();
   } catch (error) {
-    console.error('❌ Erro no tenantMiddleware:', error);
+    console.error('❌ Erro no tenantMiddleware:', error.message);
     res.status(500).json({ message: 'Server error in tenant middleware' });
   }
 };
-
-module.exports = tenantMiddleware;
