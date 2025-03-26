@@ -17,7 +17,7 @@ const tenantMiddleware = async (req, res, next) => {
       return res.status(400).json({ message: 'Tenant ID is required' });
     }
 
-    const tenant = await Tenant.findOne({ tenantId });
+    const tenant = await Tenant.findOne({ tenantId }); // Busca pelo campo tenantId
 
     if (!tenant) {
       console.log('❌ Tenant não encontrado no banco');
@@ -26,9 +26,7 @@ const tenantMiddleware = async (req, res, next) => {
 
     console.log('✅ Tenant encontrado:', tenant);
 
-    // Esta linha é a chave!
     req.tenant = tenant.toObject();
-
     next();
   } catch (error) {
     console.error('❌ Erro no tenantMiddleware:', error);
