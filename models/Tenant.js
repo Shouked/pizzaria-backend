@@ -1,4 +1,11 @@
+// models/Tenant.js
 const mongoose = require('mongoose');
+
+const AddressSchema = new mongoose.Schema({
+  cep: { type: String },
+  street: { type: String },
+  number: { type: String },
+}, { _id: false });
 
 const TenantSchema = new mongoose.Schema({
   tenantId: { type: String, required: true, unique: true },
@@ -6,12 +13,8 @@ const TenantSchema = new mongoose.Schema({
   logoUrl: String,
   primaryColor: String,
   secondaryColor: String,
-  phone: String,
-  address: {
-    cep: String,
-    street: String,
-    number: String
-  },
+  phone: { type: String },
+  address: AddressSchema,
   createdAt: { type: Date, default: Date.now }
 });
 
