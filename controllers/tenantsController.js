@@ -27,21 +27,27 @@ exports.getTenantById = async (req, res) => {
 
 // POST /api/tenants - Criar novo tenant (somente superAdmin)
 exports.createTenant = async (req, res) => {
-  let { tenantId, name, logoUrl, primaryColor, secondaryColor } = req.body;
+  let {
+    tenantId,
+    name,
+    logoUrl,
+    primaryColor,
+    secondaryColor,
+    phone,
+    address // { cep, street, number }
+  } = req.body;
 
   try {
     if (!tenantId || !name) {
       return res.status(400).json({ msg: 'TenantId e nome são obrigatórios' });
     }
 
-    // Normaliza o tenantId: letras minúsculas, sem espaços ou caracteres especiais
     tenantId = tenantId
       .trim()
       .toLowerCase()
       .replace(/\s/g, '')
       .replace(/[^a-z0-9]/g, '');
 
-    // Valida o formato
     if (!/^[a-z0-9]+$/.test(tenantId)) {
       return res.status(400).json({ msg: 'TenantId inválido. Use apenas letras e números, sem espaços ou acentos.' });
     }
@@ -57,6 +63,8 @@ exports.createTenant = async (req, res) => {
       logoUrl,
       primaryColor,
       secondaryColor,
+      phone,
+      address
     });
 
     await newTenant.save();
