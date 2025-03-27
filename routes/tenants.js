@@ -14,16 +14,22 @@ router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.cre
 router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
 router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
 
-// Nova rota para admins comuns: retorna o tenant do usuário logado
+// Rota para admins comuns: retorna o tenant do usuário logado
 router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
   try {
+    console.log('GET /tenants/me chamado');
+    console.log('req.user:', req.user);
+    console.log('req.tenant:', req.tenant);
     const tenant = req.tenant;
     if (!tenant) {
+      console.log('Tenant não encontrado');
       return res.status(404).json({ message: 'Tenant not found for this user' });
     }
     if (req.user.tenantId !== tenant.tenantId) {
+      console.log('TenantId do usuário não corresponde:', req.user.tenantId, tenant.tenantId);
       return res.status(403).json({ message: 'You can only access your own tenant' });
     }
+    console.log('Retornando tenant:', tenant);
     res.json(tenant);
   } catch (error) {
     console.error('Erro ao buscar tenant do admin:', error);
