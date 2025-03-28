@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
 
+console.log('✅ server.js carregado em: ' + new Date().toISOString());
+
 // Configuração do CORS
 app.use(cors({
   origin: 'https://pizzadabia.netlify.app',
@@ -17,8 +19,11 @@ app.use(express.json());
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
-app.use('/api/tenants', require('./routes/tenants'));
-app.use('/api/products', require('./routes/products')); // Adicionado aqui
+app.use('/api/tenants', (req, res, next) => {
+  console.log('Rota /api/tenants atingida:', req.method, req.path, 'em: ' + new Date().toISOString());
+  next();
+}, require('./routes/tenants'));
+app.use('/api/products', require('./routes/products'));
 
 // Conexão com MongoDB
 mongoose.connect(process.env.MONGO_URI, {
