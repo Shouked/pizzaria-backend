@@ -1,5 +1,6 @@
 const superAdminAuthMiddleware = (req, res, next) => {
-  console.log('superAdminAuthMiddleware chamado para:', req.path);
+  console.log('superAdminAuthMiddleware chamado para:', req.path, 'em: ' + new Date().toISOString());
+  console.log('Pilha de chamada:', new Error().stack.split('\n').slice(1, 4).join('\n'));
   console.log('req.user:', req.user);
   if (!req.user || !req.user.isSuperAdmin) {
     console.log('Acesso negado: não é super admin');
@@ -8,5 +9,4 @@ const superAdminAuthMiddleware = (req, res, next) => {
   console.log('Super admin autorizado');
   next();
 };
-
 module.exports = superAdminAuthMiddleware;
