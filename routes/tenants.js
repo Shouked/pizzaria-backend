@@ -74,6 +74,7 @@ router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (
   }
 });
 
+// Log para todas as requisições
 router.use((req, res, next) => {
   console.log('Rota requisitada no tenants.js:', req.method, req.path, 'em: ' + new Date().toISOString());
   next();
