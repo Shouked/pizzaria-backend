@@ -1,4 +1,3 @@
-// routes/tenants.js
 const express = require('express');
 const router = express.Router();
 
@@ -7,50 +6,54 @@ const authMiddleware = require('../middleware/auth');
 const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 const adminAuthMiddleware = require('../middleware/adminAuth');
 const tenantMiddleware = require('../middleware/tenant');
-const Tenant = require('../models/Tenant');
 
-// Rotas para super admins
+// ROTAS DO SUPER ADMIN
 router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
 router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
 router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant);
 router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
 router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
 
-// Rota para admins comuns: retorna o tenant do usuário logado
-router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
-  try {
-    const tenant = req.tenant;
-    if (!tenant) return res.status(404).json({ message: 'Tenant not found for this user' });
-    if (req.user.tenantId !== tenant.tenantId) return res.status(403).json({ message: 'You can only access your own tenant' });
-    res.json(tenant);
-  } catch (error) {
-    console.error('Erro ao buscar tenant do admin:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// PUT /tenants/:tenantId/me - Atualizar pizzaria pelo admin da própria unidade
+// ROTA DO ADMIN COMUM - deve vir depois das rotas acima
 router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
   try {
-    if (req.user.tenantId !== req.tenant.tenantId) {
-      return res.status(403).json({ message: 'Você só pode editar sua própria pizzaria.' });
+    const tenantId = req.params.tenantId;
+    const updates = req.body;
+
+    // Verifica se o tenantId do token corresponde ao da URL
+    if (req.user.tenantId !== tenantId) {
+      return res.status(403).json({ message: 'Você só pode editar a sua própria pizzaria' });
     }
 
-    const updates = req.body;
-    const updatedTenant = await Tenant.findOneAndUpdate(
-      { tenantId: req.user.tenantId },
-      updates,
-      { new: true }
-    );
-
+    const updatedTenant = await tenantsController.updateTenantDirect(tenantId, updates);
     if (!updatedTenant) {
-      return res.status(404).json({ message: 'Pizzaria não encontrada.' });
+      return res.status(404).json({ message: 'Pizzaria não encontrada' });
     }
 
     res.json(updatedTenant);
   } catch (error) {
-    console.error('Erro ao atualizar tenant do admin:', error.message);
-    res.status(500).json({ message: 'Erro no servidor' });
+    console.error('Erro ao atualizar pizzaria do admin:', error.message);
+    res.status(500).json({ message: 'Erro interno no servidor' });
+  }
+});
+
+// ROTA DO ADMIN COMUM - obter dados da própria pizzaria
+router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
+  try {
+    const tenant = req.tenant;
+
+    if (!tenant) {
+      return res.status(404).json({ message: 'Pizzaria não encontrada' });
+    }
+
+    if (req.user.tenantId !== tenant.tenantId) {
+      return res.status(403).json({ message: 'Você só pode acessar sua própria pizzaria' });
+    }
+
+    res.json(tenant);
+  } catch (error) {
+    console.error('Erro ao buscar pizzaria do admin:', error);
+    res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
 
