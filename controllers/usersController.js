@@ -8,7 +8,7 @@ exports.getUsers = async (req, res) => {
       return res.status(403).json({ message: 'Admin access required' });
     }
 
-    const users = await User.find({ tenantId: req.tenant._id }).select('-password');
+    const users = await User.find({ tenantId: req.tenant.tenantId }).select('-password');
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -21,7 +21,7 @@ exports.getMyProfile = async (req, res) => {
   try {
     const user = await User.findOne({
       _id: req.user.userId,
-      tenantId: req.tenant._id
+      tenantId: req.tenant.tenantId
     }).select('-password');
 
     if (!user) {
@@ -64,7 +64,7 @@ exports.updateUser = async (req, res) => {
     }
 
     const updatedUser = await User.findOneAndUpdate(
-      { _id: userId, tenantId: req.tenant._id },
+      { _id: userId, tenantId: req.tenant.tenantId },
       updateFields,
       { new: true }
     ).select('-password');
@@ -91,7 +91,7 @@ exports.deleteUser = async (req, res) => {
 
     const deletedUser = await User.findOneAndDelete({
       _id: userId,
-      tenantId: req.tenant._id
+      tenantId: req.tenant.tenantId
     });
 
     if (!deletedUser) {
