@@ -7,7 +7,6 @@ const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 const adminAuthMiddleware = require('../middleware/adminAuth');
 const tenantMiddleware = require('../middleware/tenant');
 
-// Log inicial para confirmar que este arquivo foi carregado
 console.log('✅ tenants.js carregado em: ' + new Date().toISOString());
 
 // ROTA DE TESTE
@@ -75,7 +74,6 @@ router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (
   }
 });
 
-// Log final para rastrear qualquer requisição que chegue ao router
 router.use((req, res, next) => {
   console.log('Rota requisitada no tenants.js:', req.method, req.path, 'em: ' + new Date().toISOString());
   next();
