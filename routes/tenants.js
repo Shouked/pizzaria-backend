@@ -1,3 +1,4 @@
+// routes/tenants.js
 const express = require('express');
 const router = express.Router();
 
@@ -6,26 +7,21 @@ const authMiddleware = require('../middleware/auth');
 const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 const adminAuthMiddleware = require('../middleware/adminAuth');
 const tenantMiddleware = require('../middleware/tenant');
+const Tenant = require('../models/Tenant');
 
-// ✅ Rota para admins comuns: retorna o tenant do usuário logado
+// Rotas para super admins
+router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
+router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
+router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant);
+router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
+router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
+
+// Rota para admins comuns: retorna o tenant do usuário logado
 router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
   try {
-    console.log('GET /tenants/me chamado');
-    console.log('req.user:', req.user);
-    console.log('req.tenant:', req.tenant);
-
     const tenant = req.tenant;
-    if (!tenant) {
-      console.log('Tenant não encontrado');
-      return res.status(404).json({ message: 'Tenant not found for this user' });
-    }
-
-    if (req.user.tenantId !== tenant.tenantId) {
-      console.log('TenantId do usuário não corresponde:', req.user.tenantId, tenant.tenantId);
-      return res.status(403).json({ message: 'You can only access your own tenant' });
-    }
-
-    console.log('Retornando tenant:', tenant);
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found for this user' });
+    if (req.user.tenantId !== tenant.tenantId) return res.status(403).json({ message: 'You can only access your own tenant' });
     res.json(tenant);
   } catch (error) {
     console.error('Erro ao buscar tenant do admin:', error);
@@ -33,11 +29,29 @@ router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (
   }
 });
 
-// ✅ Rotas restritas a superadmins
-router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
-router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
-router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant);
-router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
-router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
+// PUT /tenants/:tenantId/me - Atualizar pizzaria pelo admin da própria unidade
+router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
+  try {
+    if (req.user.tenantId !== req.tenant.tenantId) {
+      return res.status(403).json({ message: 'Você só pode editar sua própria pizzaria.' });
+    }
+
+    const updates = req.body;
+    const updatedTenant = await Tenant.findOneAndUpdate(
+      { tenantId: req.user.tenantId },
+      updates,
+      { new: true }
+    );
+
+    if (!updatedTenant) {
+      return res.status(404).json({ message: 'Pizzaria não encontrada.' });
+    }
+
+    res.json(updatedTenant);
+  } catch (error) {
+    console.error('Erro ao atualizar tenant do admin:', error.message);
+    res.status(500).json({ message: 'Erro no servidor' });
+  }
+});
 
 module.exports = router;
