@@ -17,6 +17,7 @@ app.use(express.json());
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
+
 const tenantsRoutes = require('./routes/tenants');
 console.log('Rotas registradas em /api/tenants:', tenantsRoutes.stack.map(r => ({
   path: r.route?.path,
@@ -25,8 +26,12 @@ console.log('Rotas registradas em /api/tenants:', tenantsRoutes.stack.map(r => (
 })));
 app.use('/api/tenants', (req, res, next) => {
   console.log('Rota /api/tenants atingida:', req.method, req.path, 'em: ' + new Date().toISOString());
+  console.log('Middlewares aplicados até agora:', app._router.stack
+    .filter(r => r.route || r.handle.name)
+    .map(r => r.handle?.name || 'anonymous'));
   next();
 }, tenantsRoutes);
+
 app.use('/api/products', require('./routes/products'));
 
 mongoose.connect(process.env.MONGO_URI, {
