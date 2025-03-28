@@ -10,6 +10,12 @@ const tenantMiddleware = require('../middleware/tenant');
 // Log inicial para confirmar que este arquivo foi carregado
 console.log('✅ tenants.js carregado em: ' + new Date().toISOString());
 
+// ROTA DE TESTE
+router.get('/test', authMiddleware, adminAuthMiddleware, (req, res) => {
+  console.log('GET /tenants/test chamado em: ' + new Date().toISOString());
+  res.json({ message: 'Rota de teste funcionando', user: req.user });
+});
+
 // ROTAS DO SUPER ADMIN
 router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
 router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
