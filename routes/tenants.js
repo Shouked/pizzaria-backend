@@ -37,7 +37,8 @@ router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddlewar
 // ROTA DO ADMIN COMUM - obter dados da pizzaria
 router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
   try {
-    console.log('GET /tenants/me chamado');
+    console.log('GET /tenants/me chamado no servidor');
+    console.log('Middleware usado: adminAuthMiddleware');
     console.log('req.user:', req.user);
     console.log('req.tenant:', req.tenant);
     const tenant = req.tenant;
