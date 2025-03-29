@@ -7,15 +7,19 @@ const tenantMiddleware = async (req, res, next) => {
   console.log('req.params:', req.params);
   console.log('req.user:', req.user);
 
-  // Ignorar validação de tenantId para super admins
-  if (req.user && req.user.isSuperAdmin) {
-    console.log('Usuário é super admin, ignorando validação de tenantId');
-    return next();
+  // Verificar se req.user existe e se é super admin
+  if (req.user) {
+    console.log('req.user.isSuperAdmin:', req.user.isSuperAdmin);
+    if (req.user.isSuperAdmin) {
+      console.log('Usuário é super admin, ignorando validação de tenantId');
+      return next();
+    }
+  } else {
+    console.log('req.user não está definido');
   }
 
   let tenantId;
 
-  // Priorizar req.user.tenantId para a rota /me
   if (req.path === '/me') {
     if (req.user && req.user.tenantId) {
       tenantId = req.user.tenantId;
@@ -24,19 +28,13 @@ const tenantMiddleware = async (req, res, next) => {
       console.log('Nenhum tenantId encontrado em req.user para /me');
       return res.status(400).json({ message: 'Tenant ID não fornecido' });
     }
-  }
-  // Usar req.params.tenantId para rotas com parâmetro (ex.: /:tenantId/me)
-  else if (req.params.tenantId) {
+  } else if (req.params.tenantId) {
     tenantId = req.params.tenantId;
     console.log('tenantIdFromUrl:', tenantId);
-  }
-  // Fallback para req.user.tenantId
-  else if (req.user && req.user.tenantId) {
+  } else if (req.user && req.user.tenantId) {
     tenantId = req.user.tenantId;
     console.log('tenantIdFromUser:', tenantId);
-  }
-  // Se não houver tenantId, retornar erro
-  else {
+  } else {
     console.log('Nenhum tenantId encontrado');
     return res.status(400).json({ message: 'Tenant ID não fornecido' });
   }
