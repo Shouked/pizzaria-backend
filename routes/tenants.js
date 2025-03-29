@@ -40,31 +40,6 @@ router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (
   }
 });
 
-// NOVA ROTA DE TESTE - mesma lógica de /me, mas com caminho diferente
-router.get('/me2', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
-  try {
-    console.log('GET /tenants/me2 chamado em: ' + new Date().toISOString());
-    console.log('VERSÃO DEPLOYADA: tenants.js com adminAuthMiddleware');
-    console.log('Middleware usado: adminAuthMiddleware');
-    console.log('req.user:', req.user);
-    console.log('req.tenant:', req.tenant);
-    const tenant = req.tenant;
-    if (!tenant) {
-      console.log('Tenant não encontrado');
-      return res.status(404).json({ message: 'Pizzaria não encontrada' });
-    }
-    if (req.user.tenantId !== tenant.tenantId) {
-      console.log('TenantId mismatch:', { userTenantId: req.user.tenantId, tenantTenantId: tenant.tenantId });
-      return res.status(403).json({ message: 'Você só pode acessar sua própria pizzaria' });
-    }
-    console.log('Tenant retornado com sucesso:', tenant);
-    res.json(tenant);
-  } catch (error) {
-    console.error('Erro ao buscar pizzaria do admin:', error);
-    res.status(500).json({ message: 'Erro interno no servidor' });
-  }
-});
-
 // ROTAS DO SUPER ADMIN
 router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
 router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
