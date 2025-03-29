@@ -2,11 +2,22 @@ const Tenant = require('../models/Tenant');
 
 const tenantMiddleware = async (req, res, next) => {
   console.log('--- Tenant Middleware Debug ---');
+  console.log('req.path:', req.path);
   console.log('req.params:', req.params);
   console.log('req.user:', req.user);
   let tenantId;
 
-  if (req.params.tenantId) {
+  // Para rotas como /me ou /me2, priorizar req.user.tenantId
+  if (req.path === '/me' || req.path === '/me2') {
+    if (req.user && req.user.tenantId) {
+      tenantId = req.user.tenantId;
+      console.log('tenantIdFromUser (priorizado para /me ou /me2):', tenantId);
+    } else {
+      console.log('Nenhum tenantId encontrado em req.user para /me ou /me2');
+      return res.status(400).json({ message: 'Tenant ID não fornecido' });
+    }
+  } else if (req.params.tenantId) {
+    // Para rotas como /:tenantId/me
     tenantId = req.params.tenantId;
     console.log('tenantIdFromUrl:', tenantId);
   } else if (req.user && req.user.tenantId) {
