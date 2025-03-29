@@ -33,7 +33,7 @@ const tenantMiddleware = async (req, res, next) => {
     console.log('tenantIdFromUrl:', tenantId);
   } else if (req.user && req.user.tenantId) {
     tenantId = req.user.tenantId;
-    console.log('tenantIdFromUser:', req.user.tenantId);
+    console.log('tenantIdFromUser:', tenantId);
   } else {
     console.log('Nenhum tenantId encontrado');
     return res.status(400).json({ message: 'Tenant ID não fornecido' });
