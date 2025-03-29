@@ -5,6 +5,13 @@ const tenantMiddleware = async (req, res, next) => {
   console.log('req.path:', req.path);
   console.log('req.params:', req.params);
   console.log('req.user:', req.user);
+
+  // Ignorar validação de tenantId para super admins
+  if (req.user && req.user.isSuperAdmin) {
+    console.log('Usuário é super admin, ignorando validação de tenantId');
+    return next();
+  }
+
   let tenantId;
 
   if (req.path === '/me') {
