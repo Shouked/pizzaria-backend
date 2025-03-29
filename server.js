@@ -14,9 +14,21 @@ app.use(cors({
 
 app.use(express.json());
 
+// Log para todas as requisições
+app.use((req, res, next) => {
+  console.log('Requisição recebida:', req.method, req.url, 'em:', new Date().toISOString());
+  console.log('Headers:', req.headers);
+  next();
+});
+
 // Rotas
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/orders', require('./routes/orders'));
+const authRoutes = require('./routes/auth');
+console.log('Rotas registradas em /api/auth:', authRoutes.stack.map(r => ({
+  path: r.route?.path,
+  methods: r.route?.methods,
+  middlewares: r.route?.stack.map(m => m.handle.name || 'anonymous')
+})));
+app.use('/api/auth', authRoutes);
 
 const tenantsRoutes = require('./routes/tenants');
 console.log('Rotas registradas em /api/tenants:', tenantsRoutes.stack.map(r => ({
@@ -24,14 +36,9 @@ console.log('Rotas registradas em /api/tenants:', tenantsRoutes.stack.map(r => (
   methods: r.route?.methods,
   middlewares: r.route?.stack.map(m => m.handle.name || 'anonymous')
 })));
-app.use('/api/tenants', (req, res, next) => {
-  console.log('Rota /api/tenants atingida:', req.method, req.path, 'em: ' + new Date().toISOString());
-  console.log('Middlewares aplicados até agora:', app._router.stack
-    .filter(r => r.route || r.handle.name)
-    .map(r => r.handle?.name || 'anonymous'));
-  next();
-}, tenantsRoutes);
+app.use('/api/tenants', tenantsRoutes);
 
+app.use('/api/orders', require('./routes/orders'));
 app.use('/api/products', require('./routes/products'));
 
 mongoose.set('strictQuery', true);
