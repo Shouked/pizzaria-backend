@@ -7,17 +7,15 @@ const tenantMiddleware = async (req, res, next) => {
   console.log('req.user:', req.user);
   let tenantId;
 
-  // Para rotas como /me ou /me2, priorizar req.user.tenantId
-  if (req.path === '/me' || req.path === '/me2') {
+  if (req.path === '/me') {
     if (req.user && req.user.tenantId) {
       tenantId = req.user.tenantId;
-      console.log('tenantIdFromUser (priorizado para /me ou /me2):', tenantId);
+      console.log('tenantIdFromUser (priorizado para /me):', tenantId);
     } else {
-      console.log('Nenhum tenantId encontrado em req.user para /me ou /me2');
+      console.log('Nenhum tenantId encontrado em req.user para /me');
       return res.status(400).json({ message: 'Tenant ID não fornecido' });
     }
   } else if (req.params.tenantId) {
-    // Para rotas como /:tenantId/me
     tenantId = req.params.tenantId;
     console.log('tenantIdFromUrl:', tenantId);
   } else if (req.user && req.user.tenantId) {
