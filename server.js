@@ -34,6 +34,7 @@ app.use('/api/tenants', (req, res, next) => {
 
 app.use('/api/products', require('./routes/products'));
 
+mongoose.set('strictQuery', true);
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
