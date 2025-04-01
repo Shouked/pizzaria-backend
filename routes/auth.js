@@ -3,65 +3,103 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
+const tenantMiddleware = require('../middleware/tenant');
 
 console.log('✅ auth.js carregado em: ' + new Date().toISOString());
 
-// Rota de login
-router.post('/login', async (req, res) => {
-  console.log('POST /auth/login chamado em: ' + new Date().toISOString());
-  console.log('Body da requisição:', req.body);
-
+// Login do super admin
+router.post('/superadmin/login', async (req, res) => {
   const { email, password } = req.body;
+  const user = await User.findOne({ email });
 
-  if (!email || !password) {
-    console.log('Email ou senha não fornecidos');
-    return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+  if (!user || !user.isSuperAdmin) {
+    return res.status(400).json({ message: 'Usuário não é super admin' });
   }
 
-  try {
-    console.log('Buscando usuário no banco para email:', email);
-    const user = await User.findOne({ email });
-    console.log('Usuário encontrado:', user);
-
-    if (!user) {
-      console.log('Usuário não encontrado');
-      return res.status(400).json({ message: 'Credenciais inválidas' });
-    }
-
-    console.log('Comparando senhas');
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Resultado da comparação de senhas:', isMatch);
-
-    if (!isMatch) {
-      console.log('Senha incorreta');
-      return res.status(400).json({ message: 'Credenciais inválidas' });
-    }
-
-    console.log('Gerando token JWT');
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-        isAdmin: user.isAdmin || false,
-        isSuperAdmin: user.isSuperAdmin || false,
-        tenantId: user.tenantId || null,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    console.log('Token gerado:', token);
-
-    res.json({ token });
-  } catch (error) {
-    console.error('Erro ao fazer login:', error.message);
-    res.status(500).json({ message: 'Erro interno no servidor' });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Senha incorreta' });
   }
+
+  const token = jwt.sign({
+    userId: user._id,
+    email: user.email,
+    isAdmin: user.isAdmin,
+    isSuperAdmin: user.isSuperAdmin,
+  }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+  res.json({
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin
+    }
+  });
 });
 
-// Log para todas as requisições
-router.use((req, res, next) => {
-  console.log('Rota requisitada no auth.js:', req.method, req.path, 'em: ' + new Date().toISOString());
-  next();
+// Login comum por tenant
+router.post('/:tenantId/login', tenantMiddleware, async (req, res) => {
+  const { email, password } = req.body;
+  const { tenantId } = req.params;
+
+  const user = await User.findOne({ email, tenantId });
+
+  if (!user) {
+    return res.status(400).json({ message: 'Usuário não encontrado' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Senha incorreta' });
+  }
+
+  const token = jwt.sign({
+    userId: user._id,
+    tenantId: user.tenantId,
+    email: user.email,
+    isAdmin: user.isAdmin
+  }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+  res.json({
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      tenantId: user.tenantId,
+      isAdmin: user.isAdmin
+    }
+  });
+});
+
+// Registro por tenant
+router.post('/:tenantId/register', tenantMiddleware, async (req, res) => {
+  const { name, email, password } = req.body;
+  const { tenantId } = req.params;
+
+  const existingUser = await User.findOne({ email, tenantId });
+  if (existingUser) {
+    return res.status(400).json({ message: 'Usuário já existe' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  const newUser = new User({ name, email, password: hashedPassword, tenantId });
+  await newUser.save();
+
+  res.status(201).json({ message: 'Usuário registrado com sucesso' });
+});
+
+// Obter perfil autenticado
+router.get('/me', authMiddleware, async (req, res) => {
+  const user = await User.findById(req.user.userId).select('-password');
+  if (!user) {
+    return res.status(404).json({ message: 'Usuário não encontrado' });
+  }
+  res.json(user);
 });
 
 module.exports = router;
