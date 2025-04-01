@@ -7,30 +7,23 @@ const superAdminAuthMiddleware = require('../middleware/superAdminAuth');
 const adminAuthMiddleware = require('../middleware/adminAuth');
 const tenantMiddleware = require('../middleware/tenant');
 
+// ==============================
+// ROTAS DO SUPER ADMIN
+// ==============================
 router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants);
 router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById);
 router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant);
 router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant);
 router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
 
-router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
-  try {
-    const tenant = req.tenant;
+// ==============================
+// ROTAS DO ADMIN COMUM
+// ==============================
 
-    if (!tenant) {
-      return res.status(404).json({ message: 'Pizzaria não encontrada' });
-    }
+// Buscar os dados da própria pizzaria
+router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, tenantsController.getMyTenant);
 
-    if (req.user.tenantId !== tenant.tenantId) {
-      return res.status(403).json({ message: 'Você só pode acessar sua própria pizzaria' });
-    }
-
-    res.json(tenant);
-  } catch (error) {
-    res.status(500).json({ message: 'Erro interno no servidor' });
-  }
-});
-
+// Atualizar os dados da própria pizzaria
 router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => {
   try {
     const tenantId = req.params.tenantId;
@@ -47,6 +40,7 @@ router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddlewar
 
     res.json(updatedTenant);
   } catch (error) {
+    console.error('Erro ao atualizar pizzaria do admin:', error.message);
     res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
