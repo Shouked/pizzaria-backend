@@ -5,44 +5,47 @@ const bcrypt = require('bcryptjs');
 exports.getUsers = async (req, res) => {
   try {
     if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Admin access required' });
+      return res.status(403).json({ message: 'Apenas administradores podem listar usuários' });
     }
 
     const users = await User.find({ tenantId: req.tenant.tenantId }).select('-password');
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Server error while fetching users' });
+    console.error('Erro ao buscar usuários:', error);
+    res.status(500).json({ message: 'Erro no servidor ao buscar usuários' });
   }
 };
 
 // GET: Buscar o próprio perfil
 exports.getMyProfile = async (req, res) => {
   try {
-    const user = await User.findOne({
-      _id: req.user.userId,
-      tenantId: req.tenant.tenantId
-    }).select('-password');
+    const query = { _id: req.user.userId };
+
+    // Se não for super admin, incluir tenantId no filtro
+    if (!req.user.isSuperAdmin) {
+      query.tenantId = req.tenant.tenantId;
+    }
+
+    const user = await User.findOne(query).select('-password');
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
     res.json(user);
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ message: 'Server error while fetching profile' });
+    console.error('Erro ao buscar perfil:', error);
+    res.status(500).json({ message: 'Erro no servidor ao buscar perfil' });
   }
 };
 
-// PUT: Atualizar usuário (admin atualiza outros usuários, user atualiza o próprio)
+// PUT: Atualizar usuário (admin atualiza outros, user atualiza o próprio)
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Apenas admin pode atualizar outros usuários
     if (!req.user.isAdmin && req.user.userId !== userId) {
-      return res.status(403).json({ message: 'Access denied to update user' });
+      return res.status(403).json({ message: 'Você só pode atualizar sua própria conta' });
     }
 
     const { name, email, password, isAdmin } = req.body;
@@ -52,31 +55,30 @@ exports.updateUser = async (req, res) => {
       email
     };
 
-    // Atualiza senha se enviada
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateFields.password = await bcrypt.hash(password, salt);
     }
 
-    // Só admin pode alterar isAdmin
     if (req.user.isAdmin && typeof isAdmin !== 'undefined') {
       updateFields.isAdmin = isAdmin;
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId, tenantId: req.tenant.tenantId },
-      updateFields,
-      { new: true }
-    ).select('-password');
+    const query = { _id: userId };
+    if (!req.user.isSuperAdmin) {
+      query.tenantId = req.tenant.tenantId;
+    }
+
+    const updatedUser = await User.findOneAndUpdate(query, updateFields, { new: true }).select('-password');
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found or access denied' });
+      return res.status(404).json({ message: 'Usuário não encontrado ou acesso negado' });
     }
 
     res.json(updatedUser);
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ message: 'Server error while updating user' });
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({ message: 'Erro no servidor ao atualizar usuário' });
   }
 };
 
@@ -84,23 +86,25 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Admin access required' });
+      return res.status(403).json({ message: 'Apenas administradores podem excluir usuários' });
     }
 
     const { userId } = req.params;
+    const query = { _id: userId };
 
-    const deletedUser = await User.findOneAndDelete({
-      _id: userId,
-      tenantId: req.tenant.tenantId
-    });
-
-    if (!deletedUser) {
-      return res.status(404).json({ message: 'User not found or access denied' });
+    if (!req.user.isSuperAdmin) {
+      query.tenantId = req.tenant.tenantId;
     }
 
-    res.json({ message: 'User deleted successfully' });
+    const deletedUser = await User.findOneAndDelete(query);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Usuário não encontrado ou acesso negado' });
+    }
+
+    res.json({ message: 'Usuário excluído com sucesso' });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Server error while deleting user' });
+    console.error('Erro ao excluir usuário:', error);
+    res.status(500).json({ message: 'Erro no servidor ao excluir usuário' });
   }
 };
