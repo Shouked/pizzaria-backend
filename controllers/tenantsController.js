@@ -1,115 +1,14 @@
 const Tenant = require('../models/Tenant');
 
-// GET /api/tenants - Listar todos os tenants (super admin)
-exports.getAllTenants = async (req, res) => {
-  try {
-    const tenants = await Tenant.find().sort({ createdAt: -1 });
-    res.json(tenants);
-  } catch (err) {
-    console.error('Erro ao buscar tenants:', err.message);
-    res.status(500).json({ message: 'Erro ao buscar pizzarias' });
-  }
-};
+exports.getAllTenants = async (req, res) => { try { const tenants = await Tenant.find(); res.json(tenants); } catch (error) { res.status(500).json({ message: 'Erro ao buscar pizzarias' }); } };
 
-// GET /api/tenants/:tenantId - Buscar tenant por ID
-exports.getTenantById = async (req, res) => {
-  try {
-    const tenant = await Tenant.findOne({ tenantId: req.params.tenantId });
-    if (!tenant) {
-      return res.status(404).json({ message: 'Pizzaria não encontrada' });
-    }
-    res.json(tenant);
-  } catch (err) {
-    console.error('Erro ao buscar pizzaria:', err.message);
-    res.status(500).json({ message: 'Erro interno no servidor' });
-  }
-};
+exports.getTenantById = async (req, res) => { try { const tenant = await Tenant.findOne({ tenantId: req.params.tenantId }); if (!tenant) { return res.status(404).json({ message: 'Pizzaria não encontrada' }); } res.json(tenant); } catch (error) { res.status(500).json({ message: 'Erro ao buscar pizzaria' }); } };
 
-// POST /api/tenants - Criar novo tenant
-exports.createTenant = async (req, res) => {
-  let {
-    tenantId,
-    name,
-    logoUrl,
-    primaryColor,
-    secondaryColor,
-    phone,
-    address
-  } = req.body;
+exports.createTenant = async (req, res) => { try { const { tenantId, name, logoUrl, phone, address } = req.body; const existingTenant = await Tenant.findOne({ tenantId }); if (existingTenant) { return res.status(400).json({ message: 'Pizzaria já cadastrada' }); } const tenant = new Tenant({ tenantId, name, logoUrl, phone, address }); await tenant.save(); res.status(201).json(tenant); } catch (error) { res.status(500).json({ message: 'Erro ao criar pizzaria' }); } };
 
-  try {
-    if (!tenantId || !name) {
-      return res.status(400).json({ message: 'TenantId e nome são obrigatórios' });
-    }
+exports.updateTenant = async (req, res) => { try { const updated = await Tenant.findOneAndUpdate( { tenantId: req.params.tenantId }, req.body, { new: true } ); if (!updated) { return res.status(404).json({ message: 'Pizzaria não encontrada' }); } res.json(updated); } catch (error) { res.status(500).json({ message: 'Erro ao atualizar pizzaria' }); } };
 
-    tenantId = tenantId.trim().toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/g, '');
+exports.deleteTenant = async (req, res) => { try { const deleted = await Tenant.findOneAndDelete({ tenantId: req.params.tenantId }); if (!deleted) { return res.status(404).json({ message: 'Pizzaria não encontrada' }); } res.json({ message: 'Pizzaria removida com sucesso' }); } catch (error) { res.status(500).json({ message: 'Erro ao deletar pizzaria' }); } };
 
-    if (!/^[a-z0-9]+$/.test(tenantId)) {
-      return res.status(400).json({ message: 'TenantId inválido. Use apenas letras e números' });
-    }
+exports.updateTenantDirect = async (tenantId, updates) => { try { const updatedTenant = await Tenant.findOneAndUpdate( { tenantId }, updates, { new: true } ); return updatedTenant; } catch (error) { console.error('Erro em updateTenantDirect:', error.message); return null; } };
 
-    const existing = await Tenant.findOne({ tenantId });
-    if (existing) {
-      return res.status(400).json({ message: 'Já existe uma pizzaria com esse TenantId' });
-    }
-
-    const newTenant = new Tenant({
-      tenantId,
-      name,
-      logoUrl,
-      primaryColor,
-      secondaryColor,
-      phone,
-      address
-    });
-
-    await newTenant.save();
-    res.status(201).json(newTenant);
-  } catch (err) {
-    console.error('Erro ao criar pizzaria:', err.message);
-    res.status(500).json({ message: 'Erro ao criar pizzaria' });
-  }
-};
-
-// PUT /api/tenants/:tenantId - Atualizar tenant (super admin)
-exports.updateTenant = async (req, res) => {
-  try {
-    const updates = req.body;
-
-    const updated = await Tenant.findOneAndUpdate(
-      { tenantId: req.params.tenantId },
-      updates,
-      { new: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({ message: 'Pizzaria não encontrada' });
-    }
-
-    res.json(updated);
-  } catch (err) {
-    console.error('Erro ao atualizar pizzaria:', err.message);
-    res.status(500).json({ message: 'Erro ao atualizar pizzaria' });
-  }
-};
-
-// PUT direto para admin comum
-exports.updateTenantDirect = async (tenantId, updates) => {
-  return await Tenant.findOneAndUpdate({ tenantId }, updates, { new: true });
-};
-
-// DELETE /api/tenants/:tenantId - Deletar tenant
-exports.deleteTenant = async (req, res) => {
-  try {
-    const deleted = await Tenant.findOneAndDelete({ tenantId: req.params.tenantId });
-
-    if (!deleted) {
-      return res.status(404).json({ message: 'Pizzaria não encontrada' });
-    }
-
-    res.json({ message: 'Pizzaria deletada com sucesso' });
-  } catch (err) {
-    console.error('Erro ao deletar pizzaria:', err.message);
-    res.status(500).json({ message: 'Erro ao deletar pizzaria' });
-  }
-};
