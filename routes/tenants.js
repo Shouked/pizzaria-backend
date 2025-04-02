@@ -4,7 +4,9 @@ const tenantsController = require('../controllers/tenantsController'); const aut
 
 // Log para debug console.log('✅ tenants.js carregado');
 
-// Rota para admins comuns obterem os dados da própria pizzaria router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => { try { const tenant = req.tenant;
+// Rota para admins comuns obterem os dados da própria pizzaria
+
+router.get('/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => { try { const tenant = req.tenant;
 
 if (!tenant) {
   return res.status(404).json({ message: 'Pizzaria não encontrada' });
