@@ -2,7 +2,8 @@ const express = require('express'); const router = express.Router();
 
 const tenantsController = require('../controllers/tenantsController'); const authMiddleware = require('../middleware/auth'); const superAdminAuthMiddleware = require('../middleware/superAdminAuth'); const adminAuthMiddleware = require('../middleware/adminAuth'); const tenantMiddleware = require('../middleware/tenant');
 
-// Log para debug console.log('✅ tenants.js carregado');
+// Log para debug 
+console.log('✅ tenants.js carregado');
 
 // Rota para admins comuns obterem os dados da própria pizzaria
 
@@ -20,9 +21,11 @@ res.json(tenant);
 
 } catch (error) { console.error('Erro ao buscar pizzaria do admin:', error); res.status(500).json({ message: 'Erro interno no servidor' }); } });
 
-// Rotas do super admin router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants); router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById); router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant); router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant); router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
+// Rotas do super admin
+router.get('/', authMiddleware, superAdminAuthMiddleware, tenantsController.getAllTenants); router.get('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.getTenantById); router.post('/', authMiddleware, superAdminAuthMiddleware, tenantsController.createTenant); router.put('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.updateTenant); router.delete('/:tenantId', authMiddleware, superAdminAuthMiddleware, tenantsController.deleteTenant);
 
-// Rota para admin comum atualizar sua própria pizzaria router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => { try { const tenantId = req.params.tenantId; const updates = req.body;
+// Rota para admin comum atualizar sua própria pizzaria 
+router.put('/:tenantId/me', authMiddleware, adminAuthMiddleware, tenantMiddleware, async (req, res) => { try { const tenantId = req.params.tenantId; const updates = req.body;
 
 if (req.user.tenantId !== tenantId) {
   return res.status(403).json({ message: 'Você só pode editar a sua própria pizzaria' });
