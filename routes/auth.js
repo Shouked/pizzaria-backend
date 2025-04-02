@@ -1,20 +1,18 @@
 const express = require('express');
 const router = express.Router();
-
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
-const tenantMiddleware = require('../middleware/tenant');
 
-// Login de superadmin (sem tenantId)
+// LOGIN SUPER ADMIN (sem tenantId)
 router.post('/superadmin/login', authController.superAdminLogin);
 
-// Login normal (admin comum)
-router.post('/:tenantId/login', tenantMiddleware, authController.login);
+// LOGIN de admin comum ou cliente com tenantId na URL
+router.post('/:tenantId/login', authController.login);
 
-// Registro de admin comum
-router.post('/:tenantId/register', tenantMiddleware, authController.register);
+// REGISTRO de cliente com tenantId na URL
+router.post('/:tenantId/register', authController.register);
 
-// Obter perfil do usuário autenticado
+// DADOS DO USUÁRIO LOGADO (admin, super admin ou cliente)
 router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
